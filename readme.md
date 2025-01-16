@@ -126,9 +126,3 @@ VITE_API_URL="http://localhost:3000"
 4. Push branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
 
-## 📝 License
-
-MIT License - see LICENSE for details
-```
-
-Similar code found with 2 license types
