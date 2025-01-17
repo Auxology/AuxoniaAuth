@@ -111,3 +111,21 @@ export const createTemporarySession = async (email: string):Promise<string | nul
         return null;
     }
 }
+
+// This function will be used to verify the temporary session
+export const verifyTemporarySession = async(email:string):Promise<boolean> => {
+    try {
+        const tempSession = await redis.get(`temp_session:${email}`);
+
+        if(!tempSession){
+            console.error('Temporary session not found');
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify temporary session', err);
+        return false;
+    }
+}

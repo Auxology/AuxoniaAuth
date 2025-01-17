@@ -1,18 +1,18 @@
 import type{ Request, Response } from "express";
-import { emailSchema } from "../libs/zod.js";
+import {emailAvailable, validateEmail} from "../utils/email.js";
 import { encrypt } from "../utils/encrypt.js";
-import { prisma } from "../libs/prisma.js";
 import { verifyCode, getEmailFromVerificationCode, deleteVerificationCode, storeVerificationCode, createTemporarySession } from "../libs/redis.js";
+import {createToken} from "../libs/session.js";
 
 // Start of sign up
 export const signup = async (req: Request, res: Response):Promise<any> => {
     const { email } = req.body;
 
     // First we validate email for second time
-    const isValid = emailSchema.safeParse(email);
+    const isValid = await validateEmail(email);
 
-    if (!isValid.success) {
-        return res.status(400).json({ error: isValid.error });
+    if(isValid){
+        return res.status(409).json({ error: 'Invalid email' });
     }
 
     // Now we encrypt the email, do not use this for temporary database, as this is meant for checking if email exists inside of main database
@@ -20,14 +20,10 @@ export const signup = async (req: Request, res: Response):Promise<any> => {
         const encryptedEmail = encrypt(email);
 
         // Here we should check if email already exists in the main database
-        const emailExists = await prisma.user.findUnique({
-            where: {
-                email: encryptedEmail
-            }
-        })
+        const isUsed = await emailAvailable(encryptedEmail);
 
-        if(emailExists){
-            return res.status(409).json({ error: 'Email already exists' });
+        if(!isUsed){
+            return res.status(409).json({ error: 'Email is already used' });
         }
 
         // Now we create verification code
@@ -66,14 +62,16 @@ export const verifyEmail = async (req: Request, res: Response):Promise<any> => {
         // Now we get rid of the verification code
         await deleteVerificationCode(code);
 
+
         // Now we can create temporary session for the user
         const sessionToken = await createTemporarySession(email);
 
-        res.cookie('temp-session', sessionToken, {
-            httpOnly: true,
-            maxAge: 1000 * 60 * 45, // 45 minutes
-            sameSite: 'strict',
-        })
+        if(!sessionToken) {
+            return res.status(500).json({ error: 'Internal Server Error with session token' });
+        }
+
+        // We create cookie now
+        createToken(email, sessionToken, res);
 
         return res.status(200).json({ message: 'Email verified'});
     }
