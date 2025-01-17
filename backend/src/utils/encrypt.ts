@@ -5,21 +5,21 @@
 import crypto from 'crypto';
 
 const algorithm = 'aes-256-cbc';
-const key = process.env.ENCRYPT_KEY!;
-const iv = process.env.ENCRYPT_IV!;
+const key = process.env.ENCRYPTION_KEY!;
+const iv = process.env.ENCRYPTION_IV!;
 
 const keyBuffer = Buffer.from(key, 'hex');
 const ivBuffer = Buffer.from(iv, 'hex');
 
-export const encrypt = (text: string) => {
+export const encrypt = (data: string) => {
   const cipher = crypto.createCipheriv(algorithm, keyBuffer, ivBuffer);
-  let encrypted = cipher.update(text);
+  let encrypted = cipher.update(data);
   encrypted = Buffer.concat([encrypted, cipher.final()]);
   return encrypted.toString('hex');
 };
 
-export const decrypt = (text: string) => {
-  const encryptedText = Buffer.from(text, 'hex');
+export const decrypt = (data: string) => {
+  const encryptedText = Buffer.from(data, 'hex');
   const decipher = crypto.createDecipheriv(algorithm, keyBuffer, ivBuffer);
   let decrypted = decipher.update(encryptedText);
   decrypted = Buffer.concat([decrypted, decipher.final()]);

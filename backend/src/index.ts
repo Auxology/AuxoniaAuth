@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import cookiesParser from 'cookie-parser';
 import cors from "cors"
 import { authRoutes } from './routes/authRoutes.js';
+import { initRedis } from './libs/redis.js';
 
 dotenv.config();
 
@@ -23,7 +24,18 @@ app.use(cors({
 // Auth Routes
 app.use("/api/auth", authRoutes);
 
+
 // Server
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-});
+async function startServer(){
+    try {
+        await initRedis();
+        app.listen(PORT, () => {
+            console.log(`Server is running on http://localhost:${PORT}`);
+        });
+    }
+    catch(err){
+        console.error('Failed to start server', err);
+    }
+}
+
+startServer();
