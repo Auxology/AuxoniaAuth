@@ -22,6 +22,9 @@ export const emailAvailable = async (email: string):Promise<boolean> => {
     const row = await prisma.user.findUnique({
         where: {
             email: email
+        },
+        select: {
+            id: true
         }
     })
 
