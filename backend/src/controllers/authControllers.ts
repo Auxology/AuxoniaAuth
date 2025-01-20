@@ -1,41 +1,56 @@
 import type{ Request, Response } from "express";
 import {emailAvailable, validateEmail} from "../utils/email.js";
 import { encrypt } from "../utils/encrypt.js";
-import { verifyCode, getEmailFromVerificationCode, deleteVerificationCode, storeVerificationCode, createTemporarySession } from "../libs/redis.js";
+import {
+    verifyCode,
+    getEmailFromVerificationCode,
+    deleteVerificationCode,
+    storeVerificationCode,
+    createTemporarySession,
+    checkIfTemporarySessionExists,
+} from "../libs/redis.js";
 import {createToken} from "../libs/session.js";
 
-// Start of sign up
+// Start of sign up(Optimization was done kind of)
 export const signup = async (req: Request, res: Response):Promise<any> => {
-    const { email } = req.body;
+    const email:string = req.body.email;
 
-    // First we validate email for second time
-    const isValid = await validateEmail(email);
-
-    if(isValid){
-        return res.status(409).json({ error: 'Invalid email' });
-    }
-
-    // Now we encrypt the email, do not use this for temporary database, as this is meant for checking if email exists inside of main database
     try {
-        const encryptedEmail = encrypt(email);
+        // Validation and encryption in parallel
+        const [isValid, encryptedEmail] = await Promise.all([
+            validateEmail(email),
+            encrypt(email),
+        ]);
 
-        // Here we should check if email already exists in the main database
-        const isUsed = await emailAvailable(encryptedEmail);
+        if(!isValid){
+            return res.status(409).json({ error: 'Invalid email' });
+        }
 
-        if(!isUsed){
+        // Check if temp session exists inside Redis
+        const existingSession =  await checkIfTemporarySessionExists(email);
+
+        if(existingSession){
             return res.status(409).json({ error: 'Email is already used' });
         }
 
-        // Now we create verification code
-        await storeVerificationCode(email);
+        // Check database only if not in Redis
+        // Todo: Prisma is slowing down the process
+        const isUsed = await emailAvailable(encryptedEmail);
 
-        return res.status(200).json({ message: 'Email is available, Code has been sent' });
+        if(isUsed){
+            return res.status(409).json({ error: 'Email is already used' });
+        }
+
+        // Store verification code asynchronously - no need to wait for it
+        storeVerificationCode(email).catch(console.error);
+
+        return res.status(200).json({ message: 'Verification code sent' });
     }
     catch(err){
         console.error('Internal Server Error', err);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
-}
+};
 
 export const verifyEmail = async (req: Request, res: Response):Promise<any> => {
     const { code} = req.body;

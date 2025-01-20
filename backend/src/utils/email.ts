@@ -5,7 +5,8 @@ import {prisma} from "../libs/prisma.js";
 // Email validation function often used in signup process
 export const validateEmail = async (email: string):Promise<boolean> => {
     try {
-        await emailSchema.parseAsync({email});
+        emailSchema.safeParse(email);
+
         return true;
     }
     catch(err){
@@ -24,5 +25,5 @@ export const emailAvailable = async (email: string):Promise<boolean> => {
         }
     })
 
-    return !row;
+    return Boolean(row);
 }

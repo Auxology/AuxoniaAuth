@@ -72,6 +72,7 @@ export const getEmailFromVerificationCode = async (code: string):Promise<string 
     }
 }
 
+
 // This function will be used to delete the verification code from Redis
 export const deleteVerificationCode = async (code: string):Promise<void> => {
     try {
@@ -109,6 +110,17 @@ export const createTemporarySession = async (email: string):Promise<string | nul
     catch(err){
         console.error('Failed to create temporary session', err);
         return null;
+    }
+}
+
+export const checkIfTemporarySessionExists = async (email: string):Promise<boolean> => {
+    try {
+        const tempSession = await redis.exists(`temp_session:${email}`);
+        return Boolean(tempSession);
+    }
+    catch(err){
+        console.error('Failed to check if temporary session exists', err);
+        return true;
     }
 }
 
