@@ -20,3 +20,7 @@ export const createToken = (email:string, sessionToken:string, res:Response):str
 
     return token;
 }
+
+export const deleteToken = (res:Response):void => {
+    res.clearCookie('temp-session');
+}

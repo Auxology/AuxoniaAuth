@@ -18,7 +18,7 @@ export const validateEmail = async (email: string):Promise<boolean> => {
 // Check if email is used in temporary database
 
 // Check if email is used in main database, make sure to remember that this function expects encrypted email
-export const emailAvailable = async (email: string):Promise<boolean> => {
+export const emailInUse = async (email: string):Promise<boolean> => {
     const row = await prisma.user.findUnique({
         where: {
             email: email

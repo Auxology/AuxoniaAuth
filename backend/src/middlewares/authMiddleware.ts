@@ -5,7 +5,7 @@ import type { JwtPayloadWithEmail, RequestWithEmail } from '../types/types.js';
 
 // This middleware which will protect the routes that might be accessed by temporary session, signup and login,
 // In frontend if user has temporary session, we will redirect him to the page where he can finish creating the account
-export const temporarySessionProtection = async (req: RequestWithEmail, res: Response, next: Function):Promise<any> => {
+export const temporarySessionProtection = async (req: RequestWithEmail, res: Response, next: Function) => {
     try {
         const token = req.cookies['temp-session'];
 

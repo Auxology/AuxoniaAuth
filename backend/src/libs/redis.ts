@@ -141,3 +141,12 @@ export const verifyTemporarySession = async(email:string):Promise<boolean> => {
         return false;
     }
 }
+
+export const deleteTemporarySession = async(email:string):Promise<void> => {
+    try {
+        await redis.del(`temp_session:${email}`);
+    }
+    catch(err){
+        console.error('Failed to delete temporary session', err);
+    }
+}
