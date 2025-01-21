@@ -1,11 +1,11 @@
 import type{ Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import {verifyTemporarySession} from "../libs/redis.js";
-import type { JwtPayloadWithEmail, RequestWithEmail } from '../types/types.js';
+import type { JwtPayloadWithEmail } from '../types/types.js';
 
 // This middleware which will protect the routes that might be accessed by temporary session, signup and login,
 // In frontend if user has temporary session, we will redirect him to the page where he can finish creating the account
-export const temporarySessionProtection = async (req: RequestWithEmail, res: Response, next: Function) => {
+export const temporarySessionProtection = async (req: Request, res: Response, next: Function):Promise<any> => {
     try {
         const token = req.cookies['temp-session'];
 

@@ -7,10 +7,9 @@ import {
     deleteVerificationCode,
     storeVerificationCode,
     createTemporarySession,
-    checkIfTemporarySessionExists,
+    checkIfTemporarySessionExists, deleteTemporarySession,
 } from "../libs/redis.js";
 import {createToken, deleteToken} from "../libs/session.js";
-import type {RequestWithEmail} from "../types/types.js";
 import {usernameAvailable, validateUsername} from "../utils/username.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
 import {createUser} from "../utils/user.js";
@@ -102,7 +101,7 @@ export const verifyEmail = async (req: Request, res: Response):Promise<any> => {
     }
 }
 
-export const finishSignup = async (req: RequestWithEmail, res: Response):Promise<any> => {
+export const finishSignup = async (req: Request, res: Response):Promise<any> => {
     // This function is protected by middleware!!!!!!!!
     // We can use email from the middleware,which means that the user has verified email
     // and has temporary session related to the email.I still know for fact that
@@ -163,10 +162,10 @@ export const finishSignup = async (req: RequestWithEmail, res: Response):Promise
     }
 
     // We delete the temporary session in redis
-    await deleteVerificationCode(email);
+    await deleteTemporarySession(email);
 
     // We get rid of the cookie
-    await deleteToken(res);
+    deleteToken(res);
 
     return res.status(200).json({ message: 'User created' });
 }

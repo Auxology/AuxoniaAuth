@@ -22,3 +22,9 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
+
+model Session {
+  sid    String   @id
+  sess   Json
+  expire DateTime
+}

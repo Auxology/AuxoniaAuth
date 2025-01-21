@@ -5,6 +5,11 @@ export interface JwtPayloadWithEmail extends jwt.JwtPayload {
     email: string;
 }
 
-export interface RequestWithEmail extends Request {
-    email: string;
+//Global declaration of the email property in the Request interface
+declare global {
+    namespace Express {
+        interface Request {
+            email: string;
+        }
+    }
 }
