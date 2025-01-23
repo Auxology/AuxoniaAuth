@@ -5,11 +5,13 @@ import cookiesParser from 'cookie-parser';
 import cors from "cors"
 import { authRoutes } from './routes/authRoutes.js';
 import { initRedis } from './libs/redis.js';
+import {ExpressSession} from "./utils/session.js";
 
 dotenv.config();
 
 const PORT = process.env.PORT!;
 const app = express();
+
 
 // Middlewares
 app.use(express.json({limit: '50mb'}));
@@ -19,6 +21,10 @@ app.use(cors({
     credentials: true,
     origin: "http://localhost:5173"
 }));
+
+app.use(ExpressSession);
+
+
 
 // Routes
 // Auth Routes
@@ -31,6 +37,7 @@ async function startServer(){
         await initRedis();
         app.listen(PORT, () => {
             console.log(`Server is running on http://localhost:${PORT}`);
+
         });
     }
     catch(err){

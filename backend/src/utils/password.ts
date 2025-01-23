@@ -3,6 +3,7 @@
 import {passwordSchema} from "../libs/zod.js";
 import crypto from 'crypto';
 import {Argon2id} from "oslo/password";
+import {prisma} from "../libs/prisma.js";
 
 const argon2 = new Argon2id();
 
@@ -51,5 +52,15 @@ export const hashPassword = async (password: string): Promise<string | null> => 
     catch (error) {
         console.error('Password hashing failed:', error);
         return null;
+    }
+}
+
+export const correctPassword = async (password: string, hash: string): Promise<boolean> => {
+    try {
+        return await argon2.verify(password, hash);
+    }
+    catch (error) {
+        console.error('Password verification failed:', error);
+        return false;
     }
 }

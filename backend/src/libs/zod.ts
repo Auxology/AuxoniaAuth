@@ -31,3 +31,8 @@ export const passwordSchema = z
     .regex(/[\W_]/, 'Password must contain at least one special character');
 
 export type PasswordSchema = z.infer<typeof passwordSchema>;
+
+export const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+});
