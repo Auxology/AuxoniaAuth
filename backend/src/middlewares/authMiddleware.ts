@@ -33,3 +33,12 @@ export const temporarySessionProtection = async (req: Request, res: Response, ne
         return res.status(500).json({message: "Internal Server Error"});
     }
 }
+
+// This middleware will protect the routes that require user to be logged in
+export const isAuthenticated =(req: Request, res: Response, next: Function):any => {
+    if(!req.session.userId) {
+        return res.status(401).json({message: "Unauthorized - Not Logged In"});
+    }
+
+    next();
+}

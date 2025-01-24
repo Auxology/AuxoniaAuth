@@ -7,4 +7,3 @@ This is my take on authentication system. Logic is mine no code is taken from an
 [![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io/)
 
-I consider removing prisma, because it slows down application and in scale i think it will cause issues.Maybe i will use pure sql or drizzle

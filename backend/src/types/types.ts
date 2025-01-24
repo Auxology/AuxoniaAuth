@@ -13,3 +13,10 @@ declare global {
         }
     }
 }
+
+// This extends the SessionData interface from express-session to contain the userId property often used by us.
+declare module 'express-session' {
+    interface SessionData {
+        userId: string;
+    }
+}

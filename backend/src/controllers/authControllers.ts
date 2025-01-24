@@ -44,7 +44,6 @@ export const signup = async (req: Request, res: Response):Promise<any> => {
         }
 
         // Check database only if not in Redis
-        // Todo: Prisma is slowing down the process
         const isUsed = await emailInUse(encryptedEmail);
 
         if(isUsed){
@@ -206,13 +205,11 @@ export const login = async (req: Request, res: Response):Promise<any> => {
         }
 
         // After that we create token
-        // TODO: Fix types
-        // @ts-ignore
         req.session.userId = user.id
 
         const sessionId = req.session.id
 
-        // Tie user id to the session
+        // Tie user id to the session,this should be done manually
         // TODO: This code is ugly and should be refactored
         await new Promise<void>((resolve) => {
             req.session.save(() => {
@@ -224,6 +221,26 @@ export const login = async (req: Request, res: Response):Promise<any> => {
     }
     catch (err) {
         console.error('Internal Server Error', err);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+// Simple logout function
+export const logout = async (req: Request, res: Response):Promise<any> => {
+    try{
+        req.session.destroy((err) => {
+            if(err){
+                console.error('Internal Server Error', err);
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+
+            res.clearCookie('connect.sid');
+
+            return res.status(200).json({ message: 'Logged out' });
+        });
+    }
+    catch (error) {
+        console.error('Internal Server Error', error);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 }
