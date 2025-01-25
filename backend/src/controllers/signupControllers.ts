@@ -7,7 +7,11 @@ import {
     deleteVerificationCode,
     storeVerificationCode,
     createTemporarySession,
-    checkIfTemporarySessionExists, deleteTemporarySession,
+    checkIfTemporarySessionExists,
+    deleteTemporarySession,
+    createForgetPasswordCode,
+    verifyForgetPasswordCode,
+    getEmailFromForgetPasswordCode, deleteForgetPasswordCode,
 } from "../libs/redis.js";
 import {createToken, deleteToken} from "../libs/session.js";
 import {usernameAvailable, validateUsername} from "../utils/username.js";
@@ -76,7 +80,7 @@ export const verifyEmail = async (req: Request, res: Response):Promise<any> => {
             return res.status(409).json({ error: 'Invalid code' });
         }
 
-        // Here we should get the email from Redis
+        // Here we should get the email from Redis, this is just used for then creating temporary session
         const email = await getEmailFromVerificationCode(code);
 
         if(!email){
@@ -238,6 +242,79 @@ export const logout = async (req: Request, res: Response):Promise<any> => {
 
             return res.status(200).json({ message: 'Logged out' });
         });
+    }
+    catch (error) {
+        console.error('Internal Server Error', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+// Function related to forget password, it is ideal to use sessions for this
+// These temporary sessions are similar to the ones used in the signup process
+export const forgetPassword = async(req: Request, res: Response):Promise<any> => {
+    try{
+        const { email } = req.body;
+
+        if(!email){
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        // Validate email
+        const isValid = await validateEmail(email);
+
+        if(!isValid){
+            return res.status(400).json({ error: 'Invalid email' });
+        }
+
+        // Encrypt email
+        const encryptedEmail = encrypt(email);
+
+        // Check if user exists
+        const user = await getUserFromEmail(encryptedEmail);
+
+        if(user === null){
+            return res.status(404).json({ error: 'User not found' });
+        }
+
+        // Create and store verification code
+        // In front-end user will be redirected to the page where they will enter the code
+        await createForgetPasswordCode(email);
+
+        return res.status(200).json({ message: 'Verification code sent' });
+    }
+    catch (error) {
+        console.error('Internal Server Error', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+}
+
+// Similar to the email verification process, we verify the code and then create temporary session
+export const verifyForgetPassword = async(req: Request, res: Response):Promise<any> => {
+    try {
+        const {code} = req.body;
+
+        if(!code){
+            return res.status(400).json({ error: 'Code is required' });
+        }
+
+        const isValid = await verifyForgetPasswordCode(code);
+
+        if(!isValid){
+            return res.status(409).json({ error: 'Invalid code' });
+        }
+
+        // Get email from redis
+        const email = await getEmailFromForgetPasswordCode(code);
+
+        if(!email){
+            return res.status(404).json({ error: 'Email not found in Redis' });
+        }
+
+        // Get rid of the verification code
+        await deleteForgetPasswordCode(code);
+
+        // TODO: Create temporary session
+        return res.status(200).json({ message: 'Email verified' });
     }
     catch (error) {
         console.error('Internal Server Error', error);
