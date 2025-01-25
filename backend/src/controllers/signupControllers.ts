@@ -9,17 +9,12 @@ import {
     createTemporarySession,
     checkIfTemporarySessionExists,
     deleteTemporarySession,
-    createForgetPasswordCode,
-    verifyForgetPasswordCode,
-    getEmailFromForgetPasswordCode, deleteForgetPasswordCode,
 } from "../libs/redis.js";
 import {createToken, deleteToken} from "../libs/session.js";
 import {usernameAvailable, validateUsername} from "../utils/username.js";
-import {amIPwned, passwordIsValid, hashPassword, correctPassword} from "../utils/password.js";
-import {createUser, getUserFromEmail, getUserPasswordHash} from "../utils/user.js";
-import {loginSchema} from "../libs/zod.js";
-import {prisma} from "../libs/prisma.js";
-import {updateSession} from "../utils/session.js";
+import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
+import {createUser} from "../utils/user.js";
+
 
 // Start of sign up(Optimization was done kind of)
 export const signup = async (req: Request, res: Response):Promise<any> => {
@@ -172,152 +167,4 @@ export const finishSignup = async (req: Request, res: Response):Promise<any> => 
     deleteToken(res);
 
     return res.status(200).json({ message: 'User created' });
-}
-
-// Login function, user logs in with email and password, but you can use username it all about your preference
-// With username you can avoid need for encryption,while usage of email is something that almost every user expects
-// During the login,also keep in mind do not return too much information about the user
-export const login = async (req: Request, res: Response):Promise<any> => {
-    // First you should validate the email and password
-    try {
-        const { email, password } = req.body;
-
-        const isValid = loginSchema.safeParse({ email, password });
-
-        if (!isValid.success) {
-            return res.status(400).json({ error: isValid.error.errors });
-        }
-
-        // Now We check user exits to that we will encrypt the email
-        const encryptedEmail = encrypt(email);
-
-        // Check if the user exists, we rely on function
-        const user = await getUserFromEmail(encryptedEmail);
-
-        if (user === null) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // We get hash from the database,we still rely on function
-        const hashedPassword = await getUserPasswordHash(user.id);
-
-        // We check if password is correct
-        const isCorrect = await correctPassword(hashedPassword, password);
-
-        if (!isCorrect) {
-            return res.status(401).json({ error: 'Invalid password' });
-        }
-
-        // After that we create token
-        req.session.userId = user.id
-
-        const sessionId = req.session.id
-
-        // Tie user id to the session,this should be done manually
-        // TODO: This code is ugly and should be refactored
-        await new Promise<void>((resolve) => {
-            req.session.save(() => {
-                updateSession(sessionId, user.id).then(resolve);
-            });
-        });
-
-        return res.status(200).json({ message: 'Logged in' });
-    }
-    catch (err) {
-        console.error('Internal Server Error', err);
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-// Simple logout function
-export const logout = async (req: Request, res: Response):Promise<any> => {
-    try{
-        req.session.destroy((err) => {
-            if(err){
-                console.error('Internal Server Error', err);
-                return res.status(500).json({ error: 'Internal Server Error' });
-            }
-
-            res.clearCookie('connect.sid');
-
-            return res.status(200).json({ message: 'Logged out' });
-        });
-    }
-    catch (error) {
-        console.error('Internal Server Error', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-// Function related to forget password, it is ideal to use sessions for this
-// These temporary sessions are similar to the ones used in the signup process
-export const forgetPassword = async(req: Request, res: Response):Promise<any> => {
-    try{
-        const { email } = req.body;
-
-        if(!email){
-            return res.status(400).json({ error: 'Email is required' });
-        }
-
-        // Validate email
-        const isValid = await validateEmail(email);
-
-        if(!isValid){
-            return res.status(400).json({ error: 'Invalid email' });
-        }
-
-        // Encrypt email
-        const encryptedEmail = encrypt(email);
-
-        // Check if user exists
-        const user = await getUserFromEmail(encryptedEmail);
-
-        if(user === null){
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        // Create and store verification code
-        // In front-end user will be redirected to the page where they will enter the code
-        await createForgetPasswordCode(email);
-
-        return res.status(200).json({ message: 'Verification code sent' });
-    }
-    catch (error) {
-        console.error('Internal Server Error', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
-}
-
-// Similar to the email verification process, we verify the code and then create temporary session
-export const verifyForgetPassword = async(req: Request, res: Response):Promise<any> => {
-    try {
-        const {code} = req.body;
-
-        if(!code){
-            return res.status(400).json({ error: 'Code is required' });
-        }
-
-        const isValid = await verifyForgetPasswordCode(code);
-
-        if(!isValid){
-            return res.status(409).json({ error: 'Invalid code' });
-        }
-
-        // Get email from redis
-        const email = await getEmailFromForgetPasswordCode(code);
-
-        if(!email){
-            return res.status(404).json({ error: 'Email not found in Redis' });
-        }
-
-        // Get rid of the verification code
-        await deleteForgetPasswordCode(code);
-
-        // TODO: Create temporary session
-        return res.status(200).json({ message: 'Email verified' });
-    }
-    catch (error) {
-        console.error('Internal Server Error', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
-    }
 }

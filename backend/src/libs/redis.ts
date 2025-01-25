@@ -150,3 +150,114 @@ export const deleteTemporarySession = async(email:string):Promise<void> => {
         console.error('Failed to delete temporary session', err);
     }
 }
+
+
+// Those are temporary session for forgot password
+export const createForgetPasswordCode = async (email: string):Promise<void> =>{
+    const code = crypto.randomBytes(3).toString('hex');
+    const expiryDate = 60 * 15;  // 15 minutes
+
+    try {
+        await redis.setEx(`forget_password_code:${code}`, expiryDate, email);
+        // In production, we should send this code to the user's email
+        console.log(`Forget password code ${code} created for ${email}`);
+    }
+    catch(err){
+        console.error('Failed to store forget password code', err);
+    }
+}
+
+export const verifyForgetPasswordCode = async (code: string):Promise<boolean> => {
+    try {
+        const isValid = await redis.exists(`forget_password_code:${code}`);
+
+        if(!isValid) return false;
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify forget password code', err);
+        return false;
+    }
+}
+
+export const getEmailFromForgetPasswordCode = async (code: string):Promise<string | null> => {
+    try {
+        const email = await redis.get(`forget_password_code:${code}`);
+
+        if(!email) {
+            console.error('Email not found');
+            return null;
+        }
+
+        return email;
+    }
+    catch(err){
+        console.error('Failed to get email from forget password code', err);
+        return null;
+    }
+}
+
+export const deleteForgetPasswordCode = async (code: string):Promise<void> => {
+    try {
+        await redis.del(`forget_password_code:${code}`);
+    }
+    catch(err){
+        console.error('Failed to delete forget password code', err);
+    }
+}
+
+export const createForgetPasswordSession = async (email:string):Promise<string | null> => {
+    try{
+        const sessionToken = crypto.randomUUID();
+        const expiryDate = 60 * 15;  // 15 minutes
+
+        const forgetPasswordData = {
+            sessionToken,
+            email,
+            expiryDate
+        }
+
+        const existingSession = await redis.get(`forget_password_session:${email}`);
+
+        if(existingSession){
+            await redis.del(`forget_password_session:${email}`);
+        }
+
+        await redis.setEx(`forget_password_session:${email}`, expiryDate, JSON.stringify(forgetPasswordData));
+
+        console.log(`Forget password session created for ${email}`);
+
+        return sessionToken
+    }
+    catch (error) {
+        console.error('Failed to create forget password session', error);
+        return null;
+    }
+}
+
+export const verifyForgetPasswordSession = async (email:string):Promise<boolean> => {
+    try {
+        const forgetPasswordSession = await redis.get(`forget_password_session:${email}`);
+
+        if(!forgetPasswordSession){
+            console.error('Forget password session not found');
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify forget password session', err);
+        return false;
+    }
+}
+
+export const deleteForgetPasswordSession = async (email:string):Promise<void> => {
+    try {
+        await redis.del(`forget_password_session:${email}`);
+    }
+    catch(err){
+        console.error('Failed to delete forget password session', err);
+    }
+}

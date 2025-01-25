@@ -1,3 +1,5 @@
+// Approach for temporary session are kind of same, only difference is that we are using different tokens for different purposes.
+// Also time for the token to expire is different.
 import type { Response } from 'express';
 import jwt from 'jsonwebtoken';
 
@@ -23,4 +25,28 @@ export const createToken = (email:string, sessionToken:string, res:Response):str
 
 export const deleteToken = (res:Response):void => {
     res.clearCookie('temp-session');
+}
+
+export const createTokenForResetPassword = (email:string, sessionToken:string,res:Response):string => {
+    const payload = {
+        email,
+        sessionToken
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_KEY!, {
+        expiresIn: '15m' // 15 minutes
+    });
+
+    res.cookie("forget-password", token, {
+        maxAge: 1000 * 60 * 15, // 15 minutes
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "none"
+    })
+
+    return token;
+}
+
+export const deleteTokenForResetPassword = (res:Response):void => {
+    res.clearCookie('forget-password');
 }
