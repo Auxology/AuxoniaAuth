@@ -12,7 +12,7 @@ import {
     deleteForgetPasswordSession
 } from "../libs/redis.js";
 import { encrypt } from "../utils/encrypt.js";
-import {createTokenForResetPassword, deleteTokenForResetPassword} from "../libs/session.js";
+import {createTokenForResetPassword, deleteToken, deleteTokenForResetPassword} from "../libs/session.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
 import {prisma} from "../libs/prisma.js";
 
@@ -148,6 +148,14 @@ export const resetPassword = async(req: Request, res: Response):Promise<any> => 
         // Delete temporary session and cookie
         await deleteForgetPasswordSession(email);
         deleteTokenForResetPassword(res);
+
+        // You don't have to clean the cookie "connect.sid" because it will be cleaned when the session is destroyed
+
+        await prisma.session.deleteMany({
+            where: {
+                userId: user.id
+            }
+        })
 
         return res.status(200).json({ message: 'Password reset successfully' });
     }

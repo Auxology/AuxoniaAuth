@@ -9,7 +9,8 @@ export const createUser = async (email: string, password: string, username:strin
             data: {
                 email: email,
                 password: password,
-                username: username
+                username: username,
+                isVerified: true
             }
         })
     }
