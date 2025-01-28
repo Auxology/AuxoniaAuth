@@ -12,7 +12,7 @@ import {
     deleteForgetPasswordSession
 } from "../libs/redis.js";
 import { encrypt } from "../utils/encrypt.js";
-import {createTokenForResetPassword, deleteToken, deleteTokenForResetPassword} from "../libs/session.js";
+import {createTokenForResetPassword, deleteTokenForResetPassword} from "../libs/session.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
 import {prisma} from "../libs/prisma.js";
 
