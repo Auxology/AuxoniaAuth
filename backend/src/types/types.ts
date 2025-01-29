@@ -9,7 +9,6 @@ declare global {
     namespace Express {
         interface Request {
             email: string;
-            userAgent: UAParser.IResult;
         }
     }
 }

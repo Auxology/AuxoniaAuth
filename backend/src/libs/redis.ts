@@ -24,6 +24,7 @@ export const initRedis = async () => {
     }
 }
 
+
 // This function will be used to store the verification code in Redis
 export const storeVerificationCode = async (email: string):Promise<void> => {
     const code = crypto.randomBytes(3).toString('hex');
@@ -262,3 +263,37 @@ export const deleteForgetPasswordSession = async (email:string):Promise<void> =>
     }
 }
 
+
+// Lock functions
+// You might wonder why do I create lock for resending email verification code inside redis?
+// The reason is that if we don't create lock, the user can spam the resending email verification code endpoint,and we don't want that.
+// Also with redis you don't have to check for expiration, because it will automatically expire after 60 seconds
+// This is a simple and fast way of preventing spamming
+
+// This function will be used to lock resending email verification code, so the user can't spam it.
+// It takes email from controller and locks it for 60 seconds.
+export const lockResendingEmailVerificationCode = async (email: string):Promise<void> => {
+    try {
+        await redis.setEx(`locked_resend_email_verification_code:${email}`, 60, 'locked');
+    }
+    catch(err){
+        console.error('Failed to lock resending email verification code', err);
+    }
+}
+
+// This function will be used to check if resending email verification code is locked
+// Since we are using redis, we don't have to check for expiration, because it will automatically expire after 60 seconds
+// Also email is take from controller
+export const checkIfResendingEmailVerificationCodeIsLocked = async (email: string):Promise<boolean> => {
+    try {
+        const isLocked = await redis.exists(`locked_resend_email_verification_code:${email}`);
+
+        if(!isLocked) return false;
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to check if resending email verification code is locked', err);
+        return true;
+    }
+}

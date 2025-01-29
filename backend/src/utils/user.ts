@@ -79,3 +79,26 @@ export interface User {
     email: string;
     username: string;
 }
+
+// This function which resets user password and deletes the session
+export const resetUserPassword = async(email:string, password:string):Promise<void> => {
+    try{
+        const user = await prisma.user.update({
+            where: {
+                email: email
+            },
+            data: {
+                password: password
+            }
+        })
+
+        await prisma.session.deleteMany({
+            where: {
+                userId: user.id
+            }
+        })
+    }
+    catch (err) {
+        console.error('Failed to reset password', err);
+    }
+}

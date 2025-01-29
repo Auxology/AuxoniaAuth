@@ -2,7 +2,7 @@
 // These temporary sessions are similar to the ones used in the signup process
 import type { Request, Response } from "express";
 import { validateEmail } from "../utils/email.js";
-import { getUserFromEmail } from "../utils/user.js";
+import {getUserFromEmail, resetUserPassword} from "../utils/user.js";
 import {
     createForgetPasswordCode,
     createForgetPasswordSession,
@@ -14,7 +14,6 @@ import {
 import { encrypt } from "../utils/encrypt.js";
 import {createTokenForResetPassword, deleteTokenForResetPassword} from "../libs/session.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
-import {prisma} from "../libs/prisma.js";
 
 export const forgetPassword = async(req: Request, res: Response):Promise<any> => {
     try{
@@ -131,31 +130,13 @@ export const resetPassword = async(req: Request, res: Response):Promise<any> => 
 
         const encryptedEmail = encrypt(email);
 
-        // Update User
-        const user = await prisma.user.update({
-            where: {
-                email: encryptedEmail
-            },
-            data: {
-                password: hashedPassword
-            }
-        })
-
-        if(!user){
-            return res.status(500).json({ error: 'Internal Server Error' });
-        }
+        // Update User, this also deletes the session
+        await resetUserPassword(encryptedEmail, hashedPassword);
 
         // Delete temporary session and cookie
         await deleteForgetPasswordSession(email);
         deleteTokenForResetPassword(res);
 
-        // You don't have to clean the cookie "connect.sid" because it will be cleaned when the session is destroyed
-
-        await prisma.session.deleteMany({
-            where: {
-                userId: user.id
-            }
-        })
 
         return res.status(200).json({ message: 'Password reset successfully' });
     }

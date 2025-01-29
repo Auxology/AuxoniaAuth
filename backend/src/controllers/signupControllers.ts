@@ -18,7 +18,7 @@ import {createUser} from "../utils/user.js";
 
 // Start of sign up(Optimization was done kind of)
 export const signup = async (req: Request, res: Response):Promise<any> => {
-    const email:string = req.body.email;
+    const email:string = req.body.email
 
     try {
         // Validation and encryption in parallel
@@ -26,6 +26,8 @@ export const signup = async (req: Request, res: Response):Promise<any> => {
             validateEmail(email),
             encrypt(email),
         ]);
+
+        // Store user email in Redis in case they decide to resend the code
 
         if(!isValid){
             return res.status(400).json({ error: 'Invalid email' });
@@ -61,7 +63,7 @@ export const signup = async (req: Request, res: Response):Promise<any> => {
 };
 
 export const verifyEmail = async (req: Request, res: Response):Promise<any> => {
-    const { code} = req.body;
+    const {code} = req.body;
 
     if(!code){
         return res.status(400).json({ error: 'Code is required' });

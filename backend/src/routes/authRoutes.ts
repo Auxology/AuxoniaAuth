@@ -4,11 +4,13 @@ import {login, logout} from "../controllers/loginControllers.js";
 import {forgetPasswordProtection, isAuthenticated, temporarySessionProtection} from "../middlewares/authMiddleware.js";
 import {forgetPassword, resetPassword, verifyForgetPassword} from "../controllers/forgetPasswordControllers.js";
 import {ipLimit} from "../libs/rate-limits.js";
+import {resendEmailVerificationCode} from "../controllers/resendCodeControllers.js";
 
 export const authRoutes = express.Router();
 
 authRoutes.post("/signup", ipLimit,signup);
 authRoutes.post("/verify-email",ipLimit, verifyEmail);
+authRoutes.post("/verify-email/resend", resendEmailVerificationCode);
 // There is no need to spam protect this route, as it is only used once
 authRoutes.post("/finish-signup", temporarySessionProtection, finishSignup)
 authRoutes.post("/login", ipLimit,login);
