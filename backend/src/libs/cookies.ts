@@ -50,3 +50,17 @@ export const createTokenForResetPassword = (email:string, sessionToken:string,re
 export const deleteTokenForResetPassword = (res:Response):void => {
     res.clearCookie('forget-password');
 }
+
+// Create temporary email token
+export const createTokenWithEmail = async (email:string, res:Response)=> {
+    res.cookie("user_email", email, {
+        maxAge: 1000 * 60 * 15, // 15 minutes
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "none"
+    });
+}
+
+export const deleteTokenWithEmail = (res:Response):void => {
+    res.clearCookie('user_email');
+}
