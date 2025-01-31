@@ -6,66 +6,73 @@ import {verifyForgetPasswordCode} from "../libs/redis.js";
 
 // This middleware which will protect the routes that might be accessed by temporary session, signup and login,
 // In frontend if user has temporary session, we will redirect him to the page where he can finish creating the account
-export const temporarySessionProtection = async (req: Request, res: Response, next: Function):Promise<any> => {
+export const temporarySessionProtection = async (req: Request, res: Response, next: Function):Promise<void> => {
     try {
         const token = req.cookies['temp-session'];
 
         if(!token) {
-            return res.status(401).json({message: "Unauthorized - No Token Provided"});
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
         }
 
         const decoded = jwt.verify(token, process.env.JWT_KEY!) as JwtPayloadWithEmail;
 
         if(!decoded) {
-            return res.status(401).json({message: "Unauthorized - Invalid Token"});
+            res.status(401).json({message: "Unauthorized - Invalid Token"});
+            return;
         }
 
         // Now we check if the token exists in the database
         const verifyTempSession = await verifyTemporarySession(decoded.email);
 
         if(!verifyTempSession) {
-            return res.status(401).json({message: "Unauthorized - Token Expired"});
+            res.status(401).json({message: "Unauthorized - Token Expired"});
+            return;
         }
 
         req.email = decoded.email;
         next();
     }
     catch(err) {
-        return res.status(500).json({message: "Internal Server Error"});
+        res.status(500).json({message: "Internal Server Error"});
     }
 }
 
 // This middleware will protect the routes that require user to be logged in
-export const isAuthenticated =(req: Request, res: Response, next: Function):any => {
+export const isAuthenticated =(req: Request, res: Response, next: Function):void  => {
     // You should also ideally clear the cookie on the frontend
     if(!req.session.userId) {
         res.clearCookie('connect.sid');
-        return res.status(401).json({message: "Unauthorized - Not Logged In"});
+        res.status(401).json({message: "Unauthorized - Not Logged In"});
+        return;
     }
 
     next();
 }
 
 // This middleware will protect the routes that are related to forget password
-export const forgetPasswordProtection = async (req: Request, res: Response, next: Function):Promise<any> => {
+export const forgetPasswordProtection = async (req: Request, res: Response, next: Function):Promise<void> => {
     try {
         const token = req.cookies['forget-password'];
 
         if(!token) {
-            return res.status(401).json({message: "Unauthorized - No Token Provided"});
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
         }
 
         const decoded = jwt.verify(token, process.env.JWT_KEY!) as JwtPayloadWithEmail;
 
         if(!decoded) {
-            return res.status(401).json({message: "Unauthorized - Invalid Token"});
+            res.status(401).json({message: "Unauthorized - Invalid Token"});
+            return;
         }
 
         // Now we check if the token exists in the database
         const verifyForgetPassword = await verifyForgetPasswordSession(decoded.email);
 
         if(!verifyForgetPassword) {
-            return res.status(401).json({message: "Unauthorized - Token Expired"});
+            res.status(401).json({message: "Unauthorized - Token Expired"});
+            return;
         }
 
         // This will be used to get the email in the controller
@@ -73,6 +80,6 @@ export const forgetPasswordProtection = async (req: Request, res: Response, next
         next();
     }
     catch(err) {
-        return res.status(500).json({message: "Internal Server Error"});
+        res.status(500).json({message: "Internal Server Error"});
     }
 };

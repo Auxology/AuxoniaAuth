@@ -8,7 +8,7 @@ import {getUserFromEmail, getUserPasswordHash} from "../utils/user.js";
 import {correctPassword} from "../utils/password.js";
 import {updateSession} from "../utils/session.js";
 
-export const login = async (req: Request, res: Response):Promise<any> => {
+export const login = async (req: Request, res: Response):Promise<void> => {
     // First you should validate the email and password
     try {
         const { email, password } = req.body;
@@ -16,7 +16,8 @@ export const login = async (req: Request, res: Response):Promise<any> => {
         const isValid = loginSchema.safeParse({ email, password });
 
         if (!isValid.success) {
-            return res.status(400).json({ error: isValid.error.errors });
+            res.status(400).json({ error: isValid.error.errors });
+            return;
         }
 
         // Now We check user exits to that we will encrypt the email
@@ -26,7 +27,8 @@ export const login = async (req: Request, res: Response):Promise<any> => {
         const user = await getUserFromEmail(encryptedEmail);
 
         if (user === null) {
-            return res.status(404).json({ error: 'User not found' });
+            res.status(404).json({ error: 'User not found' });
+            return;
         }
 
         // We get hash from the database,we still rely on function
@@ -36,7 +38,8 @@ export const login = async (req: Request, res: Response):Promise<any> => {
         const isCorrect = await correctPassword(hashedPassword, password);
 
         if (!isCorrect) {
-            return res.status(401).json({ error: 'Invalid password' });
+            res.status(401).json({ error: 'Invalid password' });
+            return;
         }
 
         // After that we create token
@@ -52,21 +55,22 @@ export const login = async (req: Request, res: Response):Promise<any> => {
             });
         });
 
-        return res.status(200).json({ message: 'Logged in' });
+        res.status(200).json({ message: 'Logged in' });
     }
     catch (err) {
         console.error('Internal Server Error', err);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 }
 
 // Simple logout function
-export const logout = async (req: Request, res: Response):Promise<any> => {
+export const logout = async (req: Request, res: Response):Promise <void> => {
     try{
         req.session.destroy((err) => {
             if(err){
                 console.error('Internal Server Error', err);
-                return res.status(500).json({ error: 'Internal Server Error' });
+                res.status(500).json({ error: 'Internal Server Error' });
+                return;
             }
 
             res.clearCookie('connect.sid');
@@ -76,6 +80,6 @@ export const logout = async (req: Request, res: Response):Promise<any> => {
     }
     catch (error) {
         console.error('Internal Server Error', error);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 }

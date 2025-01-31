@@ -3,22 +3,24 @@ import {emailInUse, validateEmail} from "../utils/email.js";
 import { encrypt } from "../utils/encrypt.js";
 import {
     verifyCode,
-    getEmailFromVerificationCode,
     deleteVerificationCode,
     storeVerificationCode,
     createTemporarySession,
     checkIfTemporarySessionExists,
     deleteTemporarySession,
 } from "../libs/redis.js";
-import {createToken, deleteToken} from "../libs/session.js";
+import {createCookieWithEmail, createToken, deleteCookieWithEmail, deleteToken} from "../libs/cookies.js";
 import {usernameAvailable, validateUsername} from "../utils/username.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
 import {createUser} from "../utils/user.js";
 
 
 // Start of sign up(Optimization was done kind of)
-export const signup = async (req: Request, res: Response):Promise<any> => {
+export const signup = async (req: Request, res: Response):Promise<void> => {
     const email:string = req.body.email
+
+    // Create cookie which temporary stores the email
+    await createCookieWithEmail(email, res);
 
     try {
         // Validation and encryption in parallel
@@ -27,10 +29,18 @@ export const signup = async (req: Request, res: Response):Promise<any> => {
             encrypt(email),
         ]);
 
-        // Store user email in Redis in case they decide to resend the code
 
         if(!isValid){
-            return res.status(400).json({ error: 'Invalid email' });
+            res.status(400).json({ error: 'Invalid email' });
+            return;
+        }
+
+        // Check main database before even doing anything with Redis
+        const isUsed = await emailInUse(encryptedEmail);
+
+        if(isUsed){
+            res.status(409).json({ error: 'Email is already used' });
+            return;
         }
 
         // Check if temp session exists inside Redis
@@ -41,72 +51,68 @@ export const signup = async (req: Request, res: Response):Promise<any> => {
         const existingSession =  await checkIfTemporarySessionExists(email);
 
         if(existingSession){
-            return res.status(409).json({ error: 'Email is already used' });
-        }
-
-        // Check database only if not in Redis
-        const isUsed = await emailInUse(encryptedEmail);
-
-        if(isUsed){
-            return res.status(409).json({ error: 'Email is already used' });
+            res.status(409).json({ error: 'Email is already used' });
+            return;
         }
 
         // Store verification code asynchronously - no need to wait for it
         storeVerificationCode(email).catch(console.error);
 
-        return res.status(200).json({ message: 'Verification code sent' });
+        res.status(200).json({ message: 'Verification code sent' });
     }
     catch(err){
         console.error('Internal Server Error', err);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 };
 
-export const verifyEmail = async (req: Request, res: Response):Promise<any> => {
+export const verifyEmail = async (req: Request, res: Response):Promise<void> => {
     const {code} = req.body;
+    const email = req.cookies.user_email as string;
 
-    if(!code){
-        return res.status(400).json({ error: 'Code is required' });
+
+    if(!email || !code) {
+        res.status(400).json({ error: 'Invalid data' });
+        return;
     }
 
     try {
+
         // Here we should verify the code
-        const isValid = await verifyCode(code);
+        const isValid = await verifyCode(email,code);
 
         if(!isValid){
-            return res.status(409).json({ error: 'Invalid code' });
-        }
-
-        // Here we should get the email from Redis, this is just used for then creating temporary session
-        const email = await getEmailFromVerificationCode(code);
-
-        if(!email){
-            return res.status(404).json({ error: 'Email not found in Redis' });
+            res.status(409).json({ error: 'Invalid code' });
+            return;
         }
 
         // Now we get rid of the verification code
-        await deleteVerificationCode(code);
+        await deleteVerificationCode(email);
 
 
         // Now we can create temporary session for the user
         const sessionToken = await createTemporarySession(email);
 
         if(!sessionToken) {
-            return res.status(500).json({ error: 'Internal Server Error with session token' });
+            res.status(500).json({ error: 'Internal Server Error with session token' });
+            return;
         }
+
+        // We delete the cookie
+        deleteCookieWithEmail(res);
 
         // We create cookie now
         createToken(email, sessionToken, res);
 
-        return res.status(200).json({ message: 'Email verified'});
+        res.status(200).json({ message: 'Email verified'});
     }
     catch(err) {
         console.error('Internal Server Error', err);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 }
 
-export const finishSignup = async (req: Request, res: Response):Promise<any> => {
+export const finishSignup = async (req: Request, res: Response):Promise<void> => {
     // This function is protected by middleware!!!!!!!!
     // We can use email from the middleware,which means that the user has verified email
     // and has temporary session related to the email.I still know for fact that
@@ -120,18 +126,28 @@ export const finishSignup = async (req: Request, res: Response):Promise<any> => 
 
     const {username, password} = req.body;
 
+    // Check with email, I neglected this part previously,causing major security issues :)
+    const userExits = await emailInUse(encryptedEmail);
+
+    if(userExits) {
+        res.status(400).json({ error: 'Invalid Email'});
+        return;
+    }
+
     // Here we should check if the username is valid
     const isValid = await validateUsername(username);
 
     if(!isValid){
-        return res.status(400).json({ error: 'Invalid username' });
+        res.status(400).json({ error: 'Invalid username' });
+        return;
     }
 
     // We check if username is in use
     const isAvailable = await usernameAvailable(username);
 
     if(!isAvailable){
-        return res.status(409).json({ error: 'Username is already used' });
+        res.status(409).json({ error: 'Username is already used' });
+        return;
     }
 
     // We simultaneously check if password is valid and pwned
@@ -146,12 +162,14 @@ export const finishSignup = async (req: Request, res: Response):Promise<any> => 
     // You are the guardian of the database, and you should protect it at all costs.
     // Do you really want some assassins to kill your king? I don't think so.
     if(!passwordValid){
-        return res.status(400).json({ error: 'Invalid password' });
+        res.status(400).json({ error: 'Invalid password' });
+        return;
     }
 
     // We check if password is pwned, This is not a must, but it is a good practice
     if(pwned){
-        return res.status(400).json({ error: 'Password is pwned' });
+         res.status(400).json({ error: 'Password is pwned' });
+         return;
     }
 
     // Before creating user we hash the password
@@ -168,5 +186,5 @@ export const finishSignup = async (req: Request, res: Response):Promise<any> => 
     // We get rid of the cookie
     deleteToken(res);
 
-    return res.status(200).json({ message: 'User created' });
+    res.status(200).json({ message: 'User created' });
 }

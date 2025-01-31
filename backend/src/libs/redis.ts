@@ -31,7 +31,7 @@ export const storeVerificationCode = async (email: string):Promise<void> => {
     const expiryDate = 60 * 15;  // 15 minutes
     
     try {
-        await redis.setEx(`verification_code:${code}`, expiryDate, email);
+        await redis.setEx(`verification_code:${email}`, expiryDate, code);
         // In production, we should send this code to the user's email
         console.log(`Verification code ${code} created for ${email}`);
     }
@@ -41,11 +41,18 @@ export const storeVerificationCode = async (email: string):Promise<void> => {
 }
 
 // This function will be used to verify the code that the user has entered
-export const verifyCode = async (code: string):Promise<boolean> => {
+export const verifyCode = async (email:string, code: string):Promise<boolean> => {
     try {
-        const isValid = await redis.exists(`verification_code:${code}`);
+        const getCode = await redis.get(`verification_code:${email}`);
+
+        if(!getCode){
+            return false;
+        }
+
+        if(getCode !== code){
+            return false;
+        }
         
-        if(!isValid) return false;
 
         return true;
     }
@@ -55,7 +62,13 @@ export const verifyCode = async (code: string):Promise<boolean> => {
     }
 }
 
-// This function will be used to get the email from Redis
+//(MAJOR SECURITY FLAW) If you ever decide to use this for sake of user experience keep in mind that this is not secure
+// This function expects that key is the code and email is value,
+// With this you no longer need to store email somewhere(cookies, session, etc), nor user needs to enter email again,
+// This is not secure because user can spam endpoints to get multiple verification codes, keep in mind with this approach
+// invalidating old codes is not possible, so if user gets multiple codes, they can use any of them to finish signup process and after that
+// they can still use other codes to finish signup process again.
+// I think you understand why this flawed.
 export const getEmailFromVerificationCode = async (code: string):Promise<string | null> => {
     try {
         const email = await redis.get(`verification_code:${code}`);
@@ -72,12 +85,12 @@ export const getEmailFromVerificationCode = async (code: string):Promise<string 
         return null;
     }
 }
-
+// !!!!!!!!!!!!!!!!!!!!!!////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // This function will be used to delete the verification code from Redis
-export const deleteVerificationCode = async (code: string):Promise<void> => {
+export const deleteVerificationCode = async (email: string):Promise<void> => {
     try {
-        await redis.del(`verification_code:${code}`);
+        await redis.del(`verification_code:${email}`);
     }
     catch(err){
         console.error('Failed to delete verification code', err);
@@ -159,7 +172,7 @@ export const createForgetPasswordCode = async (email: string):Promise<void> =>{
     const expiryDate = 60 * 15;  // 15 minutes
 
     try {
-        await redis.setEx(`forget_password_code:${code}`, expiryDate, email);
+        await redis.setEx(`forget_password_code:${email}`, expiryDate, code);
         // In production, we should send this code to the user's email
         console.log(`Forget password code ${code} created for ${email}`);
     }
@@ -168,11 +181,17 @@ export const createForgetPasswordCode = async (email: string):Promise<void> =>{
     }
 }
 
-export const verifyForgetPasswordCode = async (code: string):Promise<boolean> => {
+export const verifyForgetPasswordCode = async (email:string, code: string):Promise<boolean> => {
     try {
-        const isValid = await redis.exists(`forget_password_code:${code}`);
+        const getCode = await redis.get(`forget_password_code:${email}`);
 
-        if(!isValid) return false;
+        if(!getCode){
+            return false;
+        }
+
+        if(getCode !== code){
+            return false;
+        }
 
         return true;
     }
@@ -182,6 +201,8 @@ export const verifyForgetPasswordCode = async (code: string):Promise<boolean> =>
     }
 }
 
+// (SECURITY FLAW) If you ever decide to use this for sake of user experience keep in mind that this is not secure
+// This function expects that key is the code and email is value, you already now why this is flawed.
 export const getEmailFromForgetPasswordCode = async (code: string):Promise<string | null> => {
     try {
         const email = await redis.get(`forget_password_code:${code}`);
@@ -199,9 +220,9 @@ export const getEmailFromForgetPasswordCode = async (code: string):Promise<strin
     }
 }
 
-export const deleteForgetPasswordCode = async (code: string):Promise<void> => {
+export const deleteForgetPasswordCode = async (email:string):Promise<void> => {
     try {
-        await redis.del(`forget_password_code:${code}`);
+        await redis.del(`forget_password_code:${email}`);
     }
     catch(err){
         console.error('Failed to delete forget password code', err);
@@ -294,6 +315,30 @@ export const checkIfResendingEmailVerificationCodeIsLocked = async (email: strin
     }
     catch(err){
         console.error('Failed to check if resending email verification code is locked', err);
+        return true;
+    }
+}
+
+
+export const lockResendingForgetPasswordCode = async (email: string):Promise<void> =>  {
+    try {
+        await redis.setEx(`locked_resend_forget_password_code:${email}`, 60, 'locked');
+    }
+    catch(err){
+        console.error('Failed to lock resending forget password code', err);
+    }
+}
+
+export const checkIfResendingForgetPasswordCodeIsLocked = async (email: string):Promise<boolean> => {
+    try {
+        const isLocked = await redis.exists(`locked_resend_forget_password_code:${email}`);
+
+        if(!isLocked) return false;
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to check if resending forget password code is locked', err);
         return true;
     }
 }
