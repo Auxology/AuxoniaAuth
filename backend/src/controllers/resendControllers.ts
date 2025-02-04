@@ -2,14 +2,21 @@
 import type{ Request, Response } from 'express';
 import {
     checkIfResendingEmailVerificationCodeIsLocked,
-    lockResendingEmailVerificationCode,
     storeVerificationCode,
-    checkIfResendingForgetPasswordCodeIsLocked, createForgetPasswordCode, lockResendingForgetPasswordCode
+    checkIfResendingForgetPasswordCodeIsLocked,
+    createForgetPasswordCode,
+    lockResendingForgetPasswordCode,
+    checkIfResendingChangeEmailCodeIsLocked, createChangeEmailCode, lockResendingChangeEmailCode
 } from "../libs/redis.js";
 
 export const resendEmailVerificationCode = async (req: Request, res: Response):Promise<void> => {
     try{
         const email = req.cookies.user_email as string;
+
+        if(!email) {
+            res.status(401).json({message: "Unauthorized"});
+            return;
+        }
 
         // First check if resending email verification code is locked
         const isLocked = await checkIfResendingEmailVerificationCodeIsLocked(email);
@@ -22,7 +29,7 @@ export const resendEmailVerificationCode = async (req: Request, res: Response):P
         await storeVerificationCode(email)
 
         // Create new lock
-        await lockResendingEmailVerificationCode(email);
+        await lockResendingForgetPasswordCode(email);
 
         res.status(200).json({message: "Verification code resent"});
     }
@@ -35,6 +42,11 @@ export const resendEmailVerificationCode = async (req: Request, res: Response):P
 export const resendForgotPasswordCode = async (req: Request, res: Response):Promise<void> => {
     try{
         const email = req.cookies.user_email as string;
+
+        if(!email) {
+            res.status(401).json({message: "Unauthorized"});
+            return;
+        }
 
         // First check if resending forgot password code is locked
         const isLocked = await checkIfResendingForgetPasswordCodeIsLocked(email);
@@ -50,6 +62,36 @@ export const resendForgotPasswordCode = async (req: Request, res: Response):Prom
         await lockResendingForgetPasswordCode(email);
 
         res.status(200).json({message: "Forgot password code resent"});
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal server error"});
+    }
+}
+
+export const resendEmailChangeCode = async (req: Request, res: Response):Promise<void> => {
+    try{
+        const userId = req.session.userId;
+
+        if(!userId) {
+            res.status(401).json({message: "Unauthorized"});
+            return;
+        }
+
+        // First check if resending change email code is locked
+        const isLocked = await checkIfResendingChangeEmailCodeIsLocked(userId);
+
+        if(isLocked){
+            res.status(429).json({message: "Resending change email code is locked"});
+            return;
+        }
+
+        await createChangeEmailCode(userId);
+
+        // Create new lock
+        await lockResendingChangeEmailCode(userId);
+
+        res.status(200).json({message: "Change email code resent"});
     }
     catch (err) {
         console.error(err);

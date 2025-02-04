@@ -26,3 +26,8 @@ export const updateSession = async (id:string, userId:string):Promise<void> => {
         data: { userId },
     });
 }
+
+export const deleteSession = async (sessionId:string):Promise<void> => {
+    await prisma.session.delete({ where: { id: sessionId } });
+}
+

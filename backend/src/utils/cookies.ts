@@ -64,3 +64,28 @@ export const createCookieWithEmail = async (email:string, res:Response):Promise<
 export const deleteCookieWithEmail = (res:Response):void => {
     res.clearCookie('user_email');
 }
+
+// Create token for email change
+export const createTokenForEmailChange = (userId:string, sessionToken:string, res:Response):string => {
+    const payload = {
+        userId,
+        sessionToken
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_KEY!, {
+        expiresIn: '15m' // 15 minutes
+    });
+
+    res.cookie("email-change", token, {
+        maxAge: 1000 * 60 * 15, // 15 minutes
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "none"
+    })
+
+    return token;
+}
+
+export const deleteTokenForEmailChange = (res:Response):void => {
+    res.clearCookie('email-change');
+}

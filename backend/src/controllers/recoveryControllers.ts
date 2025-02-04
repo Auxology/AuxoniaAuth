@@ -13,10 +13,12 @@ import {
 import { encrypt } from "../utils/encrypt.js";
 import {
     createCookieWithEmail,
-    createTokenForResetPassword,
-    deleteTokenForResetPassword,
     deleteCookieWithEmail
-} from "../libs/cookies.js";
+} from "../utils/cookies.js";
+import {
+    createTokenForResetPassword,
+    deleteTokenForResetPassword
+} from "../libs/jwt-sessions.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
 
 export const forgetPassword = async(req: Request, res: Response):Promise<void> => {
