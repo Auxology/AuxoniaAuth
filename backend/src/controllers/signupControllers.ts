@@ -9,7 +9,8 @@ import {
     checkIfTemporarySessionExists,
     deleteTemporarySession,
 } from "../libs/redis.js";
-import {createCookieWithEmail, createToken, deleteCookieWithEmail, deleteToken} from "../libs/cookies.js";
+import {createCookieWithEmail,deleteCookieWithEmail,} from "../utils/cookies.js";
+import {createToken, deleteToken} from "../libs/jwt-sessions.js";
 import {usernameAvailable, validateUsername} from "../utils/username.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
 import {createUser} from "../utils/user.js";

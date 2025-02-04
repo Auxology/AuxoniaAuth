@@ -1,55 +1,6 @@
-// Approach for temporary session are kind of same, only difference is that we are using different tokens for different purposes.
-// Also time for the token to expire is different.
-import type { Response } from 'express';
-import jwt from 'jsonwebtoken';
+// Those are simple cookies which are not related to sessions
+import type{Response} from 'express';
 
-export const createToken = (email:string, sessionToken:string, res:Response):string => {
-    const payload ={
-        email,
-        sessionToken
-    }
-
-    const token = jwt.sign(payload, process.env.JWT_KEY!, {
-        expiresIn: '45m'// 45 minutes
-    });
-
-    res.cookie('temp-session', token, {
-        maxAge: 1000 * 60 * 45, // 45 minutes
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'none'
-    });
-
-    return token;
-}
-
-export const deleteToken = (res:Response):void => {
-    res.clearCookie('temp-session');
-}
-
-export const createTokenForResetPassword = (email:string, sessionToken:string,res:Response):string => {
-    const payload = {
-        email,
-        sessionToken
-    }
-
-    const token = jwt.sign(payload, process.env.JWT_KEY!, {
-        expiresIn: '15m' // 15 minutes
-    });
-
-    res.cookie("forget-password", token, {
-        maxAge: 1000 * 60 * 15, // 15 minutes
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "none"
-    })
-
-    return token;
-}
-
-export const deleteTokenForResetPassword = (res:Response):void => {
-    res.clearCookie('forget-password');
-}
 
 // Create temporary email token
 export const createCookieWithEmail = async (email:string, res:Response):Promise<void> => {
@@ -63,29 +14,4 @@ export const createCookieWithEmail = async (email:string, res:Response):Promise<
 
 export const deleteCookieWithEmail = (res:Response):void => {
     res.clearCookie('user_email');
-}
-
-// Create token for email change
-export const createTokenForEmailChange = (userId:string, sessionToken:string, res:Response):string => {
-    const payload = {
-        userId,
-        sessionToken
-    }
-
-    const token = jwt.sign(payload, process.env.JWT_KEY!, {
-        expiresIn: '15m' // 15 minutes
-    });
-
-    res.cookie("email-change", token, {
-        maxAge: 1000 * 60 * 15, // 15 minutes
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "none"
-    })
-
-    return token;
-}
-
-export const deleteTokenForEmailChange = (res:Response):void => {
-    res.clearCookie('email-change');
 }

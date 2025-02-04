@@ -5,7 +5,7 @@ import cookiesParser from 'cookie-parser';
 import cors from "cors"
 import { authRoutes } from './routes/authRoutes.js';
 import { initRedis } from './libs/redis.js';
-import {ExpressSession} from "./utils/session.js";
+import {ExpressSession} from "./libs/express-session.js";
 
 dotenv.config();
 

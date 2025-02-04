@@ -1,5 +1,15 @@
 import jwt from "jsonwebtoken";
 
+export interface User {
+    id: string;
+    email: string;
+    username: string;
+    isVerified?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
+
 export interface JwtPayloadWithEmail extends jwt.JwtPayload {
     email: string;
 }

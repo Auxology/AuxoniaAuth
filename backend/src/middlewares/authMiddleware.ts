@@ -1,6 +1,6 @@
 import type{ Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import {verifyForgetPasswordSession, verifyTemporarySession} from "../libs/redis.js";
+import {verifyChangeEmailSession, verifyForgetPasswordSession, verifyTemporarySession} from "../libs/redis.js";
 import type { JwtPayloadWithEmail } from '../types/types.js';
 import {verifyForgetPasswordCode} from "../libs/redis.js";
 
@@ -83,3 +83,35 @@ export const forgetPasswordProtection = async (req: Request, res: Response, next
         res.status(500).json({message: "Internal Server Error"});
     }
 };
+
+export const changeEmailProtection = async (req: Request, res: Response, next: Function):Promise<void> => {
+    try{
+        const token = req.cookies['email-change'];
+
+        if(!token) {
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_KEY!) as JwtPayloadWithEmail;
+
+        if(!decoded) {
+            res.status(401).json({message: "Unauthorized - Invalid Token"});
+            return;
+        }
+
+        // Now we check if the token exists in the database
+        const verify = await verifyChangeEmailSession(decoded.userId);
+
+        if(!verify) {
+            res.status(401).json({message: "Unauthorized - Token Expired"});
+            return;
+        }
+
+        next();
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}

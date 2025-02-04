@@ -6,7 +6,7 @@ import {loginSchema} from "../libs/zod.js";
 import {encrypt} from "../utils/encrypt.js";
 import {getUserFromEmail, getUserPasswordHash} from "../utils/user.js";
 import {correctPassword} from "../utils/password.js";
-import {updateSession} from "../utils/session.js";
+import {updateSession} from "../libs/express-session.js";
 
 export const login = async (req: Request, res: Response):Promise<void> => {
     // First you should validate the email and password

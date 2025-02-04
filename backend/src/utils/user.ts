@@ -1,6 +1,7 @@
 // Those are all the functions related to user
-
+import type{User} from "../types/types.js";
 import {prisma} from "../libs/prisma.js";
+import {decrypt} from "./encrypt.js";
 
 // This is function used to create user
 export const createUser = async (email: string, password: string, username:string): Promise<void> => {
@@ -73,13 +74,6 @@ export const getUserPasswordHash = async (userId:string):Promise<string> => {
     return row.password;
 }
 
-
-export interface User {
-    id: string;
-    email: string;
-    username: string;
-}
-
 // This function which resets user password and deletes the session
 export const resetUserPassword = async(email:string, password:string):Promise<void> => {
     try{
@@ -100,5 +94,95 @@ export const resetUserPassword = async(email:string, password:string):Promise<vo
     }
     catch (err) {
         console.error('Failed to reset password', err);
+    }
+}
+
+export const deleteUser = async (userId:string):Promise<void> => {
+    try {
+        await prisma.user.delete({
+            where: {
+                id: userId
+            }
+        })
+    }
+    catch(err){
+        console.error('Failed to delete user', err);
+    }
+}
+
+// This user promises full user data
+export const getUser = async (userId:string):Promise<User | null> => {
+    try{
+        const row = await prisma.user.findUnique({
+            where: {
+                id: userId
+            }
+        })
+
+        if(row===null){
+            return null;
+        }
+
+        // Decrypt email
+        const decryptedEmail = decrypt(row.email);
+
+        // DO NOT INCLUDE PASSWORD
+        const user:User = {
+            id: row.id,
+            email: decryptedEmail,
+            username: row.username,
+            isVerified: row.isVerified,
+            createdAt: row.createdAt,
+            updatedAt: row.updatedAt
+        }
+
+        return user;
+    }
+    catch(err){
+        console.error('Failed to get user', err);
+        return null;
+    }
+}
+
+// This is function which retrieves old user email from database during email change.
+// Reason is to stored it inside previous email field in database.
+// NEVER RETURN DECRYPTED EMAIL
+export const getEmailFromUserId = async (userId:string):Promise<string | null> => {
+    try{
+        const row = await prisma.user.findUnique({
+            where: {
+                id: userId
+            },
+            select: {
+                email:true
+            }
+        })
+
+        if(row===null){
+            return null;
+        }
+
+        return row.email;
+    }
+    catch(err) {
+        console.error('Failed to get email from user id', err);
+        return null;
+    }
+}
+
+export const changeUserEmail = async (userId:string, email:string, oldEmail:string):Promise<void> => {
+    try{
+        await prisma.user.update({
+            where: {
+                id: userId
+            },
+            data: {
+                email: email,
+                previousEmails: [oldEmail]
+            }
+        })
+    }
+    catch(err){
+        console.error('Failed to change email', err);
     }
 }

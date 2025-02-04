@@ -1,5 +1,5 @@
 // Those are function related to session
-import {prisma} from "../libs/prisma.js";
+import {prisma} from "./prisma.js";
 import session from "express-session";
 import {PrismaSessionStore} from "@quixo3/prisma-session-store";
 

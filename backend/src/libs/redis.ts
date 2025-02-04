@@ -284,6 +284,106 @@ export const deleteForgetPasswordSession = async (email:string):Promise<void> =>
     }
 }
 
+// Change email functions
+// In this approach we will use userId instead of email, because we don't want user to type email again
+export const createChangeEmailCode = async (userId: string):Promise<void> => {
+    const code = crypto.randomBytes(3).toString('hex');
+    const expiryDate = 60 * 15;  // 15 minutes
+
+    try {
+        await redis.setEx(`change_email_code:${userId}`, expiryDate, code);
+        // In production, we should send this code to the user's email
+        console.log(`Change email code ${code} created for ${userId}`);
+    }
+    catch(err){
+        console.error('Failed to store change email code', err);
+    }
+}
+
+export const verifyChangeEmailCode = async (userId: string, code: string):Promise<boolean> => {
+    try {
+        const getCode = await redis.get(`change_email_code:${userId}`);
+
+        if(!getCode){
+            return false;
+        }
+
+        if(getCode !== code){
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify change email code', err);
+        return false;
+    }
+}
+
+export const deleteChangeEmailCode = async (userId: string):Promise<void> => {
+    try {
+        await redis.del(`change_email_code:${userId}`);
+    }
+    catch(err){
+        console.error('Failed to delete change email code', err);
+    }
+}
+
+export const createChangeEmailSession = async (userId: string):Promise<string | null> => {
+    try {
+        const sessionToken = crypto.randomUUID();
+        const expiryDate = 60 * 15;  // 15 minutes
+
+        const changeEmailData = {
+            sessionToken,
+            userId,
+            expiryDate
+        }
+
+        const existingSession = await redis.get(`change_email_session:${userId}`);
+
+        if(existingSession){
+            await redis.del(`change_email_session:${userId}`);
+        }
+
+        await redis.setEx(`change_email_session:${userId}`, expiryDate, JSON.stringify(changeEmailData));
+
+        console.log(`Change email session created for ${userId}`);
+
+        return sessionToken;
+    }
+    catch(err){
+        console.error('Failed to create change email session', err);
+        return null;
+    }
+}
+
+export const verifyChangeEmailSession = async (userId: string):Promise<boolean> => {
+    try {
+        const changeEmailSession = await redis.get(`change_email_session:${userId}`);
+
+        if(!changeEmailSession){
+            console.error('Change email session not found');
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify change email session', err);
+        return false;
+    }
+}
+
+export const deleteChangeEmailSession = async (userId: string):Promise<void> => {
+    try {
+        await redis.del(`change_email_session:${userId}`);
+    }
+    catch(err){
+        console.error('Failed to delete change email session', err);
+    }
+}
+
 
 // Lock functions
 // You might wonder why do I create lock for resending email verification code inside redis?
@@ -339,6 +439,29 @@ export const checkIfResendingForgetPasswordCodeIsLocked = async (email: string):
     }
     catch(err){
         console.error('Failed to check if resending forget password code is locked', err);
+        return true;
+    }
+}
+
+export const lockResendingChangeEmailCode = async (userId: string):Promise<void> => {
+    try {
+        await redis.setEx(`locked_resend_change_email_code:${userId}`, 60, 'locked');
+    }
+    catch(err){
+        console.error('Failed to lock resending change email code', err);
+    }
+}
+
+export const checkIfResendingChangeEmailCodeIsLocked = async (userId: string):Promise<boolean> => {
+    try {
+        const isLocked = await redis.exists(`locked_resend_change_email_code:${userId}`);
+
+        if(!isLocked) return false;
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to check if resending change email code is locked', err);
         return true;
     }
 }
