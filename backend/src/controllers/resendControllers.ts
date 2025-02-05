@@ -6,7 +6,10 @@ import {
     checkIfResendingForgetPasswordCodeIsLocked,
     createForgetPasswordCode,
     lockResendingForgetPasswordCode,
-    checkIfResendingChangeEmailCodeIsLocked, createChangeEmailCode, lockResendingChangeEmailCode
+    checkIfResendingChangeEmailCodeIsLocked,
+    createChangeEmailCode,
+    lockResendingChangeEmailCode,
+    lockResendingEmailVerificationCode
 } from "../libs/redis.js";
 
 export const resendEmailVerificationCode = async (req: Request, res: Response):Promise<void> => {
@@ -21,6 +24,8 @@ export const resendEmailVerificationCode = async (req: Request, res: Response):P
         // First check if resending email verification code is locked
         const isLocked = await checkIfResendingEmailVerificationCodeIsLocked(email);
 
+        console.log(isLocked);
+
         if(isLocked){
             res.status(429).json({message: "Resending email verification code is locked"});
             return;
@@ -29,7 +34,7 @@ export const resendEmailVerificationCode = async (req: Request, res: Response):P
         await storeVerificationCode(email)
 
         // Create new lock
-        await lockResendingForgetPasswordCode(email);
+        await lockResendingEmailVerificationCode(email);
 
         res.status(200).json({message: "Verification code resent"});
     }

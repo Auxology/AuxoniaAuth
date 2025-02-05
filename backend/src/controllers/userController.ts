@@ -14,6 +14,7 @@ import {changeUserEmail, deleteUser, getEmailFromUserId, getUser} from "../utils
 import {deleteSession} from "../libs/express-session.js";
 
 
+
 // When user click (CHANGE EMAIL) button, we will send a verification code to the old email
 export const requestEmailChange = async (req: Request, res: Response):Promise<void> => {
     try {

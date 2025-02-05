@@ -407,11 +407,12 @@ export const lockResendingEmailVerificationCode = async (email: string):Promise<
 // Also email is take from controller
 export const checkIfResendingEmailVerificationCodeIsLocked = async (email: string):Promise<boolean> => {
     try {
-        const isLocked = await redis.exists(`locked_resend_email_verification_code:${email}`);
+        const exists = await redis.exists(`locked_resend_email_verification_code:${email}`);
 
-        if(!isLocked) return false;
+        if(!exists) return false;
 
         return true;
+
     }
     catch(err){
         console.error('Failed to check if resending email verification code is locked', err);

@@ -19,8 +19,9 @@ import {
     requestEmailChange,
     verifyCodeForEmailChange,
     deleteAccount,
-    getUserData
+    getUserData,
 } from "../controllers/userController.js";
+import {checkAuth, checkVerifyEmailCookie} from "../controllers/checkerController.js";
 
 export const authRoutes = express.Router();
 
@@ -45,3 +46,7 @@ authRoutes.post("/user-data", isAuthenticated, getUserData);
 authRoutes.post("/request-email-change", isAuthenticated, requestEmailChange);
 authRoutes.post("/verify-email-change-code", isAuthenticated, verifyCodeForEmailChange);
 authRoutes.post("/change-email", isAuthenticated, changeEmailProtection, changeEmail)
+
+// This route will be used to check if user is logged in
+authRoutes.get("/is-authenticated", isAuthenticated, checkAuth);
+authRoutes.get("/verify-email/check", checkVerifyEmailCookie);

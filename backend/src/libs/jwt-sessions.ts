@@ -17,7 +17,7 @@ export const createToken = (email:string, sessionToken:string, res:Response):str
     res.cookie('temp-session', token, {
         maxAge: 1000 * 60 * 45, // 45 minutes
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: true,
         sameSite: 'none'
     });
 

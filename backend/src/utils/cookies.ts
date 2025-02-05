@@ -7,7 +7,7 @@ export const createCookieWithEmail = async (email:string, res:Response):Promise<
     res.cookie("user_email", email, {
         maxAge: 1000 * 60 * 15, // 15 minutes
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "none"
     });
 }
