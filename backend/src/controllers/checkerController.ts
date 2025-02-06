@@ -37,3 +37,21 @@ export const checkAuth = async (req: Request, res: Response):Promise<void> => {
         res.status(500).json({message: "Internal Server Error"});
     }
 }
+
+export const checkForTemporarySession = async (req: Request, res: Response):Promise<void> => {
+    try{
+        const email = req.email;
+
+        if(!email){
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
+        }
+
+
+        res.status(200).json({email: email});
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}

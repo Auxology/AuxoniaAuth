@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import StartSignUpPage from "@/pages/signUp/startSignUpPage.tsx";
 import VerifyEmailPage from "@/pages/signUp/verifyEmailPage.tsx";
 import FinishSignUpPage from "@/pages/signUp/finishSignUpPage.tsx";
-import {PublicRoute, VerifyEmailCookie} from './components/PublicRoute';
+import {PublicRoute, TemporaryPublicRoute, VerifyEmailCookie} from './components/PublicRoute';
 
 const queryClient = new QueryClient()
 
@@ -22,7 +22,9 @@ export default function App() {
                     // If user is logged in, it will redirect to /dashboard
                     <Route path="/" element={
                         <PublicRoute>
-                            <StartSignUpPage/>
+                            <TemporaryPublicRoute>
+                                <StartSignUpPage/>
+                            </TemporaryPublicRoute>
                         </PublicRoute>
                     }/>
 
@@ -31,7 +33,9 @@ export default function App() {
                     <Route path="/signup/code" element={
                         <PublicRoute>
                             <VerifyEmailCookie>
-                                <VerifyEmailPage/>
+                                <TemporaryPublicRoute>
+                                    <VerifyEmailPage/>
+                                </TemporaryPublicRoute>
                             </VerifyEmailCookie>
                         </PublicRoute>
                         }/>
@@ -40,7 +44,9 @@ export default function App() {
                     // If user is logged in, it will redirect to /dashboard
                     <Route path="/signup/finish" element={
                         <PublicRoute>
-                            <FinishSignUpPage/>
+                            <TemporaryPublicRoute>
+                                <FinishSignUpPage/>
+                            </TemporaryPublicRoute>
                         </PublicRoute>
                     }/>
                 </Routes>

@@ -19,6 +19,7 @@ import {zodResolver} from "@hookform/resolvers/zod";
 import {useMutation} from "@tanstack/react-query";
 import { useNavigate} from "react-router-dom";
 import {axiosInstance} from "@/lib/axios.ts";
+import { AxiosError } from "axios";
 
 
 const FormSchema = z.object({
@@ -59,8 +60,8 @@ export default function VerifyEmailPage() {
             })
             navigate("/signup/finish")
         },
-        onError: (error) => {
-            if (error.response?.status === 409) {
+        onError: (error: AxiosError) => {
+            if (error.status === 409) {
                 toast({
                     title: "Error",
                     description: "Invalid Code.",

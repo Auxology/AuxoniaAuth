@@ -144,12 +144,14 @@ export const finishSignup = async (req: Request, res: Response):Promise<void> =>
     }
 
     // We check if username is in use
-    const isAvailable = await usernameAvailable(username);
+    const isUsed = await usernameAvailable(username);
 
-    if(!isAvailable){
+    if(isUsed){
         res.status(409).json({ error: 'Username is already used' });
         return;
     }
+
+    console.log("I am here");
 
     // We simultaneously check if password is valid and pwned
     const [passwordValid, pwned] = await Promise.all([

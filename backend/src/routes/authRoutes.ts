@@ -21,7 +21,7 @@ import {
     deleteAccount,
     getUserData,
 } from "../controllers/userController.js";
-import {checkAuth, checkVerifyEmailCookie} from "../controllers/checkerController.js";
+import {checkAuth, checkForTemporarySession, checkVerifyEmailCookie} from "../controllers/checkerController.js";
 
 export const authRoutes = express.Router();
 
@@ -50,3 +50,4 @@ authRoutes.post("/change-email", isAuthenticated, changeEmailProtection, changeE
 // This route will be used to check if user is logged in
 authRoutes.get("/is-authenticated", isAuthenticated, checkAuth);
 authRoutes.get("/verify-email/check", checkVerifyEmailCookie);
+authRoutes.get("/temporary-session", temporarySessionProtection, checkForTemporarySession);

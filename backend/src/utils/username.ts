@@ -12,9 +12,12 @@ export const usernameAvailable = async (username: string):Promise<boolean> => {
                 username: username
             },
             select: {
-                id: true
+                username: true,
             }
         })
+
+
+        console.log(Boolean(row));
 
         return Boolean(row);
     }

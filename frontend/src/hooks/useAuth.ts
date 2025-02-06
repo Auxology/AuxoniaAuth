@@ -9,10 +9,6 @@ export function useAuth() {
             try{
                 const response = await axiosInstance.get("/auth/is-authenticated")
 
-                if(response.status === 401) {
-                    return null;
-                }
-
                 return response.data;
             }
             catch(err) {

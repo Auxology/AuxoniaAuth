@@ -13,6 +13,7 @@ import {useMutation} from "@tanstack/react-query";
 import {toast} from "@/hooks/use-toast.ts";
 import {useNavigate} from "react-router-dom";
 import {axiosInstance} from "@/lib/axios.ts";
+import { AxiosError } from "axios";
 
 export default function StartSignUpPage() {
 
@@ -43,13 +44,14 @@ export default function StartSignUpPage() {
             toast({
                 title: "Success",
                 description: "Check your email for the verification code.",
+            });
             // Ensure state updates before navigation
             setTimeout(() => {
                 navigate("/signup/code");
             }, 0);
         },
-        onError: (error: any) => {
-            if(error.response?.status === 409) {
+        onError: (error: AxiosError) => {
+            if(error.status === 409) {
                 toast({
                     title: "Error",
                     description: "Email is already in use.",
