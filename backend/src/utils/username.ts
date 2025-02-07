@@ -1,22 +1,13 @@
 // Function related to the username
-
 // This function will check if username is available in the database
-
-import {prisma} from "../libs/prisma.js";
+import { eq } from "drizzle-orm";
+import { db } from "../db/index.js";
+import { users } from "../db/schema.js";
 import {usernameSchema} from "../libs/zod.js";
 
 export const usernameAvailable = async (username: string):Promise<boolean> => {
     try {
-        const row = prisma.user.findUnique({
-            where: {
-                username: username
-            },
-            select: {
-                username: true,
-            }
-        })
-
-
+        const [row] = await db.select({username: users.username}).from(users).where(eq(users.username, username)).limit(1)
         console.log(Boolean(row));
 
         return Boolean(row);

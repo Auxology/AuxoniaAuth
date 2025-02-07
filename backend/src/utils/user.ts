@@ -1,21 +1,23 @@
 // Those are all the functions related to user
 import type{User} from "../types/types.js";
-import {prisma} from "../libs/prisma.js";
 import {decrypt} from "./encrypt.js";
+import {db} from "../db/index.js";
+import {sessions, users} from "../db/schema.js";
+import { eq } from "drizzle-orm";
 
 // This is function used to create user
 export const createUser = async (email: string, password: string, username:string): Promise<void> => {
-    try {
-        await prisma.user.create({
-            data: {
-                email: email,
-                password: password,
-                username: username,
-                isVerified: true
-            }
+    try{
+        console.log('Creating user');
+
+        await db.insert(users).values({
+            email: email,
+            password: password,
+            username: username,
+            isVerified: true
         })
     }
-    catch(err){
+    catch (err) {
         console.error('Failed to create user', err);
     }
 }
@@ -24,20 +26,16 @@ export const createUser = async (email: string, password: string, username:strin
 // For security reasons, you should not return too much information about the user
 export const getUserFromEmail = async (email:string): Promise<User | null> => {
     try {
-        const row = await prisma.user.findUnique({
-            where: {
-                email: email
-            },
-            select: {
-                id:true,
-                email:true,
-                username:true
-            }
+        const [row] = await db.select({
+            id: users.id,
+            email: users.email,
+            username: users.username
         })
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1)
 
-        if(row===null){
-            return null;
-        }
+        if (!row) return null;
 
         const user:User = {
             id: row.id,
@@ -58,16 +56,14 @@ export const getUserFromEmail = async (email:string): Promise<User | null> => {
 // It improves readability and makes it easier to understand the code
 // Whilst make ensuring more safety.
 export const getUserPasswordHash = async (userId:string):Promise<string> => {
-    const row = await prisma.user.findUnique({
-        where: {
-            id: userId
-        },
-        select: {
-            password:true,
-        }
+    const [row] = await db.select({
+        password: users.password
     })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
 
-    if(row===null){
+    if(!row){
         throw new Error('User not found');
     }
 
@@ -77,20 +73,17 @@ export const getUserPasswordHash = async (userId:string):Promise<string> => {
 // This function which resets user password and deletes the session
 export const resetUserPassword = async(email:string, password:string):Promise<void> => {
     try{
-        const user = await prisma.user.update({
-            where: {
-                email: email
-            },
-            data: {
-                password: password
-            }
+        const [user] = await db.update(users).set({
+            password: password
         })
+        .where(eq(users.email, email))
+        .returning({ id: users.id })
 
-        await prisma.session.deleteMany({
-            where: {
-                userId: user.id
-            }
-        })
+        if(!user){
+            throw new Error('User not found');
+        }
+
+        await db.delete(sessions).where(eq(sessions.userId, user.id))
     }
     catch (err) {
         console.error('Failed to reset password', err);
@@ -99,11 +92,7 @@ export const resetUserPassword = async(email:string, password:string):Promise<vo
 
 export const deleteUser = async (userId:string):Promise<void> => {
     try {
-        await prisma.user.delete({
-            where: {
-                id: userId
-            }
-        })
+        await db.delete(users).where(eq(users.id, userId))
     }
     catch(err){
         console.error('Failed to delete user', err);
@@ -113,15 +102,9 @@ export const deleteUser = async (userId:string):Promise<void> => {
 // This user promises full user data
 export const getUser = async (userId:string):Promise<User | null> => {
     try{
-        const row = await prisma.user.findUnique({
-            where: {
-                id: userId
-            }
-        })
+        const [row] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
-        if(row===null){
-            return null;
-        }
+        if(!row) return null;
 
         // Decrypt email
         const decryptedEmail = decrypt(row.email);
@@ -149,18 +132,9 @@ export const getUser = async (userId:string):Promise<User | null> => {
 // NEVER RETURN DECRYPTED EMAIL
 export const getEmailFromUserId = async (userId:string):Promise<string | null> => {
     try{
-        const row = await prisma.user.findUnique({
-            where: {
-                id: userId
-            },
-            select: {
-                email:true
-            }
-        })
+        const [row] = await db.select({email: users.email}).from(users).where(eq(users.id, userId)).limit(1);
 
-        if(row===null){
-            return null;
-        }
+        if(!row) return null;
 
         return row.email;
     }
@@ -172,15 +146,11 @@ export const getEmailFromUserId = async (userId:string):Promise<string | null> =
 
 export const changeUserEmail = async (userId:string, email:string, oldEmail:string):Promise<void> => {
     try{
-        await prisma.user.update({
-            where: {
-                id: userId
-            },
-            data: {
-                email: email,
-                previousEmails: [oldEmail]
-            }
+        await db.update(users).set({
+            email: email,
+            previousEmails: [oldEmail]
         })
+        .where(eq(users.id, userId))
     }
     catch(err){
         console.error('Failed to change email', err);

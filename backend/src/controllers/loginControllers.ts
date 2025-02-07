@@ -45,13 +45,27 @@ export const login = async (req: Request, res: Response):Promise<void> => {
         // After that we create token
         req.session.userId = user.id
 
-        const sessionId = req.session.id
+        const sessionId = req.sessionID;
 
         // Tie user id to the session,this should be done manually
         // TODO: This code is ugly and should be refactored
-        await new Promise<void>((resolve) => {
-            req.session.save(() => {
-                updateSession(sessionId, user.id).then(resolve);
+        await new Promise<void>((resolve, reject) => {
+            req.session.save((err) => {
+                if (err) {
+                    console.error('Session save error:', err);
+                    reject(err);
+                    return;
+                }
+                console.log('Session saved successfully');
+                updateSession(sessionId, user.id)
+                    .then(() => {
+                        console.log('Session updated with user ID');
+                        resolve();
+                    })
+                    .catch((err) => {
+                        console.error('Session update error:', err);
+                        reject(err);
+                    });
             });
         });
 

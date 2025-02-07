@@ -3,6 +3,9 @@
 // For temporary database it is not necessary to encrypt data, as it is not sensitive and also gets deleted after 1 hour.
 
 import crypto from 'crypto';
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const algorithm = 'aes-256-cbc';
 const key = process.env.ENCRYPTION_KEY!;
@@ -27,7 +30,7 @@ export const decrypt = (data: string) => {
 };
 
 // I do not recommend encrypting data that does not need to be encrypted. Examples are username, createdAt, updatedAt, etc.
-// You encrypt only and i mean only email, first name, last name, phone number and stuff that can actually be used maliciously.
+// You encrypt only and I mean only email, first name, last name, phone number and stuff that can actually be used maliciously.
 // if you encrypt everything, you will have to decrypt everything to do a simple query. This will slow down your application.
 // Be mindful of when and why you decrypt data. You should decrypt data only when you need to display it to the user.
 // You should never decrypt data and send it to the client side. Always decrypt data on the server side and then send it to the client side.

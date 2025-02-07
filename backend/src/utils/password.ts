@@ -3,7 +3,6 @@
 import {passwordSchema} from "../libs/zod.js";
 import crypto from 'crypto';
 import {Argon2id} from "oslo/password";
-import {prisma} from "../libs/prisma.js";
 
 const argon2 = new Argon2id();
 

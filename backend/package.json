@@ -18,6 +18,7 @@
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
+    "drizzle-orm": "^0.39.2",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
@@ -25,6 +26,7 @@
     "node": "^22.13.1",
     "oslo": "^1.2.1",
     "pg": "^8.13.1",
+    "postgres": "^3.4.5",
     "redis": "^4.7.0",
     "socket.io": "^4.8.1",
     "zod": "^3.24.1"
@@ -37,19 +39,10 @@
     "@types/express-session": "^1.18.1",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^22.10.7",
-    "@types/pg": "^8.11.10",
+    "@types/pg": "^8.11.11",
+    "drizzle-kit": "^0.30.4",
     "ts-node": "^10.9.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.3"
-  },
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "@prisma/client",
-      "@prisma/client",
-      "esbuild"
-    ],
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
   }
 }
