@@ -43,10 +43,7 @@ export default function FinishSignUpPage() {
                 title: "Success",
                 description: "Account created successfully.",
             });
-            // Ensure state updates before navigation
-            setTimeout(() => {
-                navigate("/login");
-            }, 0);
+            window.location.href = '/login'
         },
         onError: (error: AxiosError) => {
             if (error.status === 409) {

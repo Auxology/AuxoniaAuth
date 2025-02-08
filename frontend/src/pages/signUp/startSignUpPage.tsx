@@ -1,6 +1,6 @@
 // This where user will start the signup process
 
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card.tsx";
+import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/card.tsx";
 import {useForm} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod"
 import {z} from "zod"
@@ -14,6 +14,7 @@ import {toast} from "@/hooks/use-toast.ts";
 import {useNavigate} from "react-router-dom";
 import {axiosInstance} from "@/lib/axios.ts";
 import { AxiosError } from "axios";
+import {Link} from "react-router-dom";
 
 export default function StartSignUpPage() {
 
@@ -105,6 +106,10 @@ export default function StartSignUpPage() {
                     </Form>
 
                 </CardContent>
+
+                <CardFooter>
+                    <Link to="/login" className="text-center">Already have an account? Login</Link>
+                </CardFooter>
 
 
             </Card>

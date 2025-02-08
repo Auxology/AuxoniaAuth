@@ -4,6 +4,9 @@ import StartSignUpPage from "@/pages/signUp/startSignUpPage.tsx";
 import VerifyEmailPage from "@/pages/signUp/verifyEmailPage.tsx";
 import FinishSignUpPage from "@/pages/signUp/finishSignUpPage.tsx";
 import {PublicRoute, TemporaryPublicRoute, VerifyEmailCookie} from './components/PublicRoute';
+import LoginPage from "@/pages/login/page.tsx";
+import DashboardPage from "@/pages/dashboard/page.tsx";
+import {PrivateRoute} from "@/components/PrivateRoute.tsx";
 
 const queryClient = new QueryClient()
 
@@ -49,6 +52,24 @@ export default function App() {
                             </TemporaryPublicRoute>
                         </PublicRoute>
                     }/>
+
+                    <Route path="/login" element={
+                        <PublicRoute>
+                            <TemporaryPublicRoute>
+                                <LoginPage/>
+                            </TemporaryPublicRoute>
+                        </PublicRoute>
+                        }
+                    />
+
+                    <Route path="/dashboard" element={
+                        <PrivateRoute>
+                            <DashboardPage />
+                        </PrivateRoute>
+                    }/>
+
+                    <Route path="*" element={<h1>404</h1>} />
+
                 </Routes>
             </Router>
         </QueryClientProvider>

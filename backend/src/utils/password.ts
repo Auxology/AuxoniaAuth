@@ -1,5 +1,7 @@
 // Those are all the function related to passwords.
 
+// Oslo is deprecated and will be removed in the future.
+
 import {passwordSchema} from "../libs/zod.js";
 import crypto from 'crypto';
 import {Argon2id} from "oslo/password";

@@ -1,4 +1,5 @@
 import type {Request, Response} from "express";
+import {getUser} from "../utils/user.js";
 
 // This function will check if user has cookie with email
 // If user has cookie with email, it means that they have started the process of verifying their email
@@ -30,7 +31,14 @@ export const checkAuth = async (req: Request, res: Response):Promise<void> => {
             return;
         }
 
-        res.status(200).json({message: "You are logged in"});
+        const user = await getUser(userId);
+
+        if(!user){
+            res.status(401).json({message: "You are not logged in"});
+            return;
+        }
+
+        res.status(200).json({message: "You are logged in", user: user});
     }
     catch (err) {
         console.error(err);

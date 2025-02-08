@@ -8,7 +8,6 @@ import {usernameSchema} from "../libs/zod.js";
 export const usernameAvailable = async (username: string):Promise<boolean> => {
     try {
         const [row] = await db.select({username: users.username}).from(users).where(eq(users.username, username)).limit(1)
-        console.log(Boolean(row));
 
         return Boolean(row);
     }

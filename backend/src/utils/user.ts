@@ -8,8 +8,6 @@ import { eq } from "drizzle-orm";
 // This is function used to create user
 export const createUser = async (email: string, password: string, username:string): Promise<void> => {
     try{
-        console.log('Creating user');
-
         await db.insert(users).values({
             email: email,
             password: password,
