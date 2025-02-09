@@ -61,12 +61,11 @@ export default function VerifyEmailPage() {
             navigate("/signup/finish")
         },
         onError: (error: AxiosError) => {
-            if (error.status === 409) {
-                toast({
-                    title: "Error",
-                    description: "Invalid Code.",
-                })
-            }
+            toast({
+                title: "Error",
+                description: error.response?.statusText === "Conflict" ? "Invalid Code" : "An error occurred.",
+                variant: "destructive"
+            })
         }
     })
 

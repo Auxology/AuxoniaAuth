@@ -17,3 +17,18 @@ export function useVerifyEmailCookie () {
         },
     })
 }
+
+export function useForgotPasswordCookie () {
+    return useQuery({
+        queryKey: ['forget-password'],
+        queryFn: async () => {
+            try{
+                const response = await axiosInstance.get("/auth/forgot-password/check")
+                return response.data
+            }
+            catch(err) {
+                return null;
+            }
+        },
+    })
+}

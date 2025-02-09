@@ -12,7 +12,10 @@ export const createUser = async (email: string, password: string, username:strin
             email: email,
             password: password,
             username: username,
-            isVerified: true
+            isVerified: true,
+            // Set previous instance of password and email
+            previousPasswords: [password],
+            previousEmails: [email]
         })
     }
     catch (err) {
@@ -72,7 +75,8 @@ export const getUserPasswordHash = async (userId:string):Promise<string> => {
 export const resetUserPassword = async(email:string, password:string):Promise<void> => {
     try{
         const [user] = await db.update(users).set({
-            password: password
+            password: password,
+            previousPasswords: [password]
         })
         .where(eq(users.email, email))
         .returning({ id: users.id })

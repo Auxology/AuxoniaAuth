@@ -53,19 +53,11 @@ export default function LoginPage() {
             }, 0);
         },
         onError: (error: AxiosError) => {
-            if (error.status === 401) {
-                toast({
-                    title: "Error",
-                    description: "Invalid email or password.",
-                    variant: "destructive"
-                });
-            } else {
-                toast({
-                    title: "Error",
-                    description: "An error occurred.",
-                    variant: "destructive"
-                });
-            }
+            toast({
+                title: "Error",
+                description: error.response?.statusText || "An error occurred.",
+                variant: "destructive"
+            })
         },
     });
 
@@ -97,9 +89,6 @@ export default function LoginPage() {
                                         <FormControl>
                                             <Input placeholder="johndoe@example.com" {...field} />
                                         </FormControl>
-                                        <FormDescription>
-                                            This is your public display name.
-                                        </FormDescription>
                                         <FormMessage />
                                     </FormItem>
                                 )}
@@ -115,7 +104,7 @@ export default function LoginPage() {
                                             <Input type="password" placeholder="********" {...field} />
                                         </FormControl>
                                         <FormDescription>
-                                            Password must be at least 8 characters long.
+                                            <Link to="/forgot-password" className="text-primary">Forgot password?</Link>
                                         </FormDescription>
                                         <FormMessage />
                                     </FormItem>
@@ -129,7 +118,7 @@ export default function LoginPage() {
                 </CardContent>
 
                 <CardFooter>
-                    <Link to="/" className="text-center">Don't have an account? Sign Up</Link>
+                    <Link to="/" className="text-center text-sm text-gray-600">Don't have an account? Sign Up</Link>
                 </CardFooter>
 
             </Card>

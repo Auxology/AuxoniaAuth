@@ -3,13 +3,13 @@ import type{ Request, Response } from 'express';
 import {
     checkIfResendingEmailVerificationCodeIsLocked,
     storeVerificationCode,
-    checkIfResendingForgetPasswordCodeIsLocked,
-    createForgetPasswordCode,
-    lockResendingForgetPasswordCode,
     checkIfResendingChangeEmailCodeIsLocked,
     createChangeEmailCode,
     lockResendingChangeEmailCode,
-    lockResendingEmailVerificationCode
+    lockResendingEmailVerificationCode,
+    checkIfResendingForgotPasswordCodeIsLocked,
+    createForgotPasswordCode,
+    lockResendingForgotPasswordCode
 } from "../libs/redis.js";
 
 export const resendEmailVerificationCode = async (req: Request, res: Response):Promise<void> => {
@@ -54,17 +54,17 @@ export const resendForgotPasswordCode = async (req: Request, res: Response):Prom
         }
 
         // First check if resending forgot password code is locked
-        const isLocked = await checkIfResendingForgetPasswordCodeIsLocked(email);
+        const isLocked = await checkIfResendingForgotPasswordCodeIsLocked(email);
 
         if(isLocked){
             res.status(429).json({message: "Resending forgot password code is locked"});
             return;
         }
 
-        await createForgetPasswordCode(email);
+        await createForgotPasswordCode(email);
 
         // Create new lock
-        await lockResendingForgetPasswordCode(email);
+        await lockResendingForgotPasswordCode(email);
 
         res.status(200).json({message: "Forgot password code resent"});
     }

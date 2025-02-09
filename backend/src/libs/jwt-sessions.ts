@@ -40,10 +40,10 @@ export const createTokenForResetPassword = (email:string, sessionToken:string,re
         expiresIn: '15m' // 15 minutes
     });
 
-    res.cookie("forget-password", token, {
+    res.cookie("forgot-password", token, {
         maxAge: 1000 * 60 * 15, // 15 minutes
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "none"
     })
 
@@ -52,7 +52,7 @@ export const createTokenForResetPassword = (email:string, sessionToken:string,re
 
 // Delete token for reset password session
 export const deleteTokenForResetPassword = (res:Response):void => {
-    res.clearCookie('forget-password');
+    res.clearCookie('forgot-password');
 }
 
 // Create token for email change
@@ -69,7 +69,7 @@ export const createTokenForEmailChange = (userId:string, sessionToken:string, re
     res.cookie("email-change", token, {
         maxAge: 1000 * 60 * 15, // 15 minutes
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "none"
     })
 

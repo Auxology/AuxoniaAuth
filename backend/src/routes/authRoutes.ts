@@ -7,7 +7,7 @@ import {
     isAuthenticated,
     temporarySessionProtection
 } from "../middlewares/authMiddleware.js";
-import {forgetPassword, resetPassword, verifyForgetPassword} from "../controllers/recoveryControllers.js";
+import {forgotPassword, resetPassword, verifyForgotPassword} from "../controllers/recoveryControllers.js";
 import {ipLimit} from "../libs/rate-limits.js";
 import {
     resendEmailChangeCode,
@@ -21,7 +21,12 @@ import {
     deleteAccount,
     getUserData,
 } from "../controllers/userController.js";
-import {checkAuth, checkForTemporarySession, checkVerifyEmailCookie} from "../controllers/checkerController.js";
+import {
+    checkAuth, checkForForgotPasswordSession,
+    checkForgotPasswordCookie,
+    checkForTemporarySession,
+    checkVerifyEmailCookie
+} from "../controllers/checkerController.js";
 
 export const authRoutes = express.Router();
 
@@ -32,8 +37,8 @@ authRoutes.post("/finish-signup", temporarySessionProtection, finishSignup)
 authRoutes.post("/login", ipLimit,login);
 authRoutes.post("/logout", logout);
 
-authRoutes.post("/forget-password", ipLimit,forgetPassword);
-authRoutes.post("/forget-password/code",ipLimit, verifyForgetPassword);
+authRoutes.post("/forgot-password", ipLimit,forgotPassword);
+authRoutes.post("/forgot-password/code",ipLimit, verifyForgotPassword);
 authRoutes.post("/reset-password", forgetPasswordProtection, resetPassword);
 
 authRoutes.post("/verify-email/resend", resendEmailVerificationCode);
@@ -50,4 +55,6 @@ authRoutes.post("/change-email", isAuthenticated, changeEmailProtection, changeE
 // This route will be used to check if user is logged in
 authRoutes.get("/is-authenticated", isAuthenticated, checkAuth);
 authRoutes.get("/verify-email/check", checkVerifyEmailCookie);
+authRoutes.get("/forgot-password/check", checkForgotPasswordCookie);
+authRoutes.get("/reset-password/check", forgetPasswordProtection ,checkForForgotPasswordSession);
 authRoutes.get("/temporary-session", temporarySessionProtection, checkForTemporarySession);

@@ -19,6 +19,7 @@ declare global {
     namespace Express {
         interface Request {
             email: string;
+            forgot_password_email: string;
         }
     }
 }

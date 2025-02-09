@@ -9,12 +9,10 @@ import {Button} from "@/components/ui/button";
 import {axiosInstance} from "@/lib/axios.ts";
 import {useMutation} from "@tanstack/react-query";
 import {toast} from "@/hooks/use-toast";
-import {useNavigate} from "react-router-dom";
 import {AxiosError} from "axios";
 
 export default function FinishSignUpPage() {
 
-    const navigate = useNavigate()
 
     const form = useForm<z.infer<typeof finishSignUpSchema>>({
         resolver: zodResolver(finishSignUpSchema),
@@ -46,19 +44,11 @@ export default function FinishSignUpPage() {
             window.location.href = '/login'
         },
         onError: (error: AxiosError) => {
-            if (error.status === 409) {
-                toast({
-                    title: "Error",
-                    description: "Username is already in use.",
-                    variant: "destructive"
-                });
-            } else {
-                toast({
-                    title: "Error",
-                    description: "An error occurred.",
-                    variant: "destructive"
-                });
-            }
+            toast({
+                title: "Error",
+                description: error.response?.status === 409 ? "Username is already used" : "An error occurred",
+                variant: "destructive"
+            })
         }
     });
 

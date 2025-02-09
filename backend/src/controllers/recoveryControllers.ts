@@ -4,16 +4,15 @@ import type { Request, Response } from "express";
 import { validateEmail } from "../utils/email.js";
 import {getUserFromEmail, resetUserPassword} from "../utils/user.js";
 import {
-    createForgetPasswordCode,
-    createForgetPasswordSession,
-    deleteForgetPasswordCode,
-    verifyForgetPasswordCode,
-    deleteForgetPasswordSession
+    checkIfResendingForgotPasswordCodeIsLocked,
+    createForgotPasswordCode, createForgotPasswordSession,
+    deleteForgotPasswordCode,
+    lockResendingForgotPasswordCode, verifyForgotPasswordCode,
+    deleteForgotPasswordSession
 } from "../libs/redis.js";
 import { encrypt } from "../utils/encrypt.js";
 import {
-    createCookieWithEmail,
-    deleteCookieWithEmail
+    createCookieWithEmailForForgotPassword, deleteCookieWithEmailForForgotPassword
 } from "../utils/cookies.js";
 import {
     createTokenForResetPassword,
@@ -21,12 +20,32 @@ import {
 } from "../libs/jwt-sessions.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
 
-export const forgetPassword = async(req: Request, res: Response):Promise<void> => {
+export const forgotPassword = async(req: Request, res: Response):Promise<void> => {
     try{
         const { email } = req.body;
 
+        // Encrypt email
+        const encryptedEmail = encrypt(email);
+
+        // Check if user exists
+        const user = await getUserFromEmail(encryptedEmail);
+
+        if(user === null){
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+
+        // Check if user is locked out
+        const isLocked = await checkIfResendingForgotPasswordCodeIsLocked(email);
+
+        if(isLocked){
+            res.status(429).json({ error: 'Resending forgot password code is locked' });
+            return;
+        }
+
         // Store email in cookie
-        await createCookieWithEmail(email, res);
+        await createCookieWithEmailForForgotPassword(email, res);
 
         if(!email){
             res.status(400).json({ error: 'Email is required' });
@@ -41,20 +60,12 @@ export const forgetPassword = async(req: Request, res: Response):Promise<void> =
             return;
         }
 
-        // Encrypt email
-        const encryptedEmail = encrypt(email);
-
-        // Check if user exists
-        const user = await getUserFromEmail(encryptedEmail);
-
-        if(user === null){
-            res.status(404).json({ error: 'User not found' });
-            return;
-        }
-
         // Create and store verification code
         // In front-end user will be redirected to the page where they will enter the code
-        await createForgetPasswordCode(email);
+        await createForgotPasswordCode(email);
+
+        // Lock out user
+        await lockResendingForgotPasswordCode(email);
 
         res.status(200).json({ message: 'Verification code sent' });
     }
@@ -65,17 +76,18 @@ export const forgetPassword = async(req: Request, res: Response):Promise<void> =
 }
 
 // Similar to the email verification process, we verify the code and then create temporary session
-export const verifyForgetPassword = async(req: Request, res: Response):Promise<void> => {
+export const verifyForgotPassword = async(req: Request, res: Response):Promise<void> => {
     try {
         const {code} = req.body;
-        const email = req.cookies.user_email as string;
+        const email = req.cookies.reset_email as string;
+
 
         if(!email || !code) {
             res.status(400).json({ error: 'Invalid data' });
             return;
         }
 
-        const isValid = await verifyForgetPasswordCode(email,code);
+        const isValid = await verifyForgotPasswordCode(email,code);
 
         if(!isValid) {
             res.status(409).json({ error: 'Invalid code' });
@@ -88,13 +100,12 @@ export const verifyForgetPassword = async(req: Request, res: Response):Promise<v
         }
 
         // Get rid of the verification code
-        await deleteForgetPasswordCode(email);
+        await deleteForgotPasswordCode(email);
 
         // Create temporary session
-        const sessionToken = await createForgetPasswordSession(email);
-
-        // Get rid of email cookie
-        deleteCookieWithEmail(res);
+        const sessionToken = await createForgotPasswordSession(email);
+        ``
+        deleteCookieWithEmailForForgotPassword(res);
 
         if(!sessionToken) {
             res.status(500).json({ error: 'Internal Server Error with session token' });
@@ -114,7 +125,12 @@ export const verifyForgetPassword = async(req: Request, res: Response):Promise<v
 
 export const resetPassword = async(req: Request, res: Response):Promise<void> => {
     try {
-        const email = req.email;
+        const email = req.forgot_password_email;
+
+        if(!email){
+            res.status(400).json({ error: 'Invalid data' });
+            return;
+        }
 
         // Expect password from body
         const { password } = req.body;
@@ -151,11 +167,13 @@ export const resetPassword = async(req: Request, res: Response):Promise<void> =>
 
         const encryptedEmail = encrypt(email);
 
+        //TODO: Check if password is same as the previous one
+
         // Update User, this also deletes the session
         await resetUserPassword(encryptedEmail, hashedPassword);
 
         // Delete temporary session and cookie
-        await deleteForgetPasswordSession(email);
+        await deleteForgotPasswordSession(email);
         deleteTokenForResetPassword(res);
 
 

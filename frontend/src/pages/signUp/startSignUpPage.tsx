@@ -52,19 +52,11 @@ export default function StartSignUpPage() {
             }, 0);
         },
         onError: (error: AxiosError) => {
-            if(error.status === 409) {
-                toast({
-                    title: "Error",
-                    description: "Email is already in use.",
-                    variant: "destructive"
-                });
-            } else {
-                toast({
-                    title: "Error",
-                    description: "Something went wrong. Please try again.",
-                    variant: "destructive"
-                });
-            }
+            toast({
+                title: "Error",
+                description: error.response?.status === 409 ? "Email is already used" : error.response?.status === 429 ? "To many requests" : "An error occurred",
+                variant: "destructive"
+            })
         }
     });
 

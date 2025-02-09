@@ -8,6 +8,8 @@ import {
     createTemporarySession,
     checkIfTemporarySessionExists,
     deleteTemporarySession,
+    lockResendingEmailVerificationCode,
+    checkIfResendingEmailVerificationCodeIsLocked,
 } from "../libs/redis.js";
 import {createCookieWithEmail,deleteCookieWithEmail,} from "../utils/cookies.js";
 import {createToken, deleteToken} from "../libs/jwt-sessions.js";
@@ -29,6 +31,14 @@ export const signup = async (req: Request, res: Response):Promise<void> => {
             validateEmail(email),
             encrypt(email),
         ]);
+
+        // Check if user is locked out from resending the verification code
+        const isLocked = await checkIfResendingEmailVerificationCodeIsLocked(email);
+
+        if(isLocked){
+            res.status(429).json({message: "Resending email verification code is locked"});
+            return;
+        }
 
 
         if(!isValid){
@@ -58,6 +68,10 @@ export const signup = async (req: Request, res: Response):Promise<void> => {
 
         // Store verification code asynchronously - no need to wait for it
         storeVerificationCode(email).catch(console.error);
+
+        // Lockout the resending of the verification code
+        // This is done to prevent spamming of the verification code
+        await lockResendingEmailVerificationCode(email);
 
         res.status(200).json({ message: 'Verification code sent' });
     }
@@ -150,8 +164,6 @@ export const finishSignup = async (req: Request, res: Response):Promise<void> =>
         res.status(409).json({ error: 'Username is already used' });
         return;
     }
-
-    console.log("I am here");
 
     // We simultaneously check if password is valid and pwned
     const [passwordValid, pwned] = await Promise.all([

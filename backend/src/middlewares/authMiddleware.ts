@@ -1,8 +1,11 @@
 import type{ Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
-import {verifyChangeEmailSession, verifyForgetPasswordSession, verifyTemporarySession} from "../libs/redis.js";
+import {
+    verifyChangeEmailSession,
+    verifyForgotPasswordSession,
+    verifyTemporarySession
+} from "../libs/redis.js";
 import type { JwtPayloadWithEmail } from '../types/types.js';
-import {verifyForgetPasswordCode} from "../libs/redis.js";
 
 // This middleware which will protect the routes that might be accessed by temporary session, signup and login,
 // In frontend if user has temporary session, we will redirect him to the page where he can finish creating the account
@@ -53,7 +56,7 @@ export const isAuthenticated =(req: Request, res: Response, next: Function):void
 // This middleware will protect the routes that are related to forget password
 export const forgetPasswordProtection = async (req: Request, res: Response, next: Function):Promise<void> => {
     try {
-        const token = req.cookies['forget-password'];
+        const token = req.cookies['forgot-password'];
 
         if(!token) {
             res.status(401).json({message: "Unauthorized - No Token Provided"});
@@ -68,7 +71,7 @@ export const forgetPasswordProtection = async (req: Request, res: Response, next
         }
 
         // Now we check if the token exists in the database
-        const verifyForgetPassword = await verifyForgetPasswordSession(decoded.email);
+        const verifyForgetPassword = await verifyForgotPasswordSession(decoded.email);
 
         if(!verifyForgetPassword) {
             res.status(401).json({message: "Unauthorized - Token Expired"});
@@ -76,7 +79,7 @@ export const forgetPasswordProtection = async (req: Request, res: Response, next
         }
 
         // This will be used to get the email in the controller
-        req.email = decoded.email;
+        req.forgot_password_email = decoded.email;
         next();
     }
     catch(err) {
