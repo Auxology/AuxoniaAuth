@@ -56,9 +56,9 @@ export const hashPassword = async (password: string): Promise<string | null> => 
     }
 }
 
-export const correctPassword = async (password: string, hash: string): Promise<boolean> => {
+export const correctPassword = async (hash: string, password: string): Promise<boolean> => {
     try {
-        return await argon2.verify(password, hash);
+        return await argon2.verify(hash, password);
     }
     catch (error) {
         console.error('Password verification failed:', error);

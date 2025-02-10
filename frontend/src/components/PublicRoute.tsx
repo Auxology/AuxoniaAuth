@@ -7,6 +7,8 @@ import { Navigate, useLocation } from "react-router-dom";
 import {useTemporarySession} from "@/hooks/useTemporarySession.ts";
 import {useForgotPasswordSession} from "@/hooks/useForgotPasswordSession.ts";
 
+// This route is for public pages like login, signup, forgot password, etc
+// If user is logged in, it will redirect to /dashboard
 export function PublicRoute({ children }: { children: React.ReactNode }) {
     const {data: user, isLoading} = useAuth();
 
@@ -36,6 +38,7 @@ export function VerifyEmailCookie({ children }: { children: React.ReactNode }) {
     return <>{children}</>
 }
 
+// This protects /forgot-password/code page from user which have not started the forgot password process
 export function ForgotPasswordCookie({ children }: { children: React.ReactNode }) {
     const {data: user, isLoading} = useForgotPasswordCookie();
 
@@ -50,6 +53,9 @@ export function ForgotPasswordCookie({ children }: { children: React.ReactNode }
     return <>{children}</>
 }
 
+// This is safe point function for temporary session
+// If user has temporary session(meaning user has already verified email but not completed signup process),
+// They will be redirected to /signup/finish page
 export function TemporaryPublicRoute({ children }: { children: React.ReactNode }) {
     const {data: email, isLoading} = useTemporarySession();
     const location = useLocation();
@@ -70,6 +76,9 @@ export function TemporaryPublicRoute({ children }: { children: React.ReactNode }
 }
 
 
+// This is not a safe point similar to TemporaryPublicRoute
+// It just check if user has "forgot" password session or not
+// If user has "forgot" password session, they will be redirected to /forgot-password page
 export function ForgetPasswordProtection({ children }: { children: React.ReactNode }) {
     const {data: user, isLoading} = useForgotPasswordSession();
 

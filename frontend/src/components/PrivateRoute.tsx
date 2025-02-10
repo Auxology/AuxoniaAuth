@@ -1,3 +1,4 @@
+// This protects the routes that require authentication. If the user is not authenticated, they will be redirected to the login page.
 import { ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth.ts";
 import { Navigate } from "react-router-dom";

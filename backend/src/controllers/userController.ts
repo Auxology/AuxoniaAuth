@@ -142,8 +142,6 @@ export const deleteAccount = async (req: Request, res: Response):Promise<void> =
     }
 }
 
-// Warn user that this they will not receive data about their sessions.
-// Also warn them for security reasons, they won't receive password data.
 export const getUserData = async (req: Request, res: Response):Promise<void> => {
     try{
         const userId = req.session.userId;
@@ -162,11 +160,8 @@ export const getUserData = async (req: Request, res: Response):Promise<void> => 
         }
 
 
-        // Send user data to the user
-        // Ideally send trough email
-        console.log("User data: ", user);
 
-        res.json({message: "User data sent"});
+        res.json({user});
     }
     catch (err) {
         console.error(err);

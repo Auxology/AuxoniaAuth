@@ -1,4 +1,7 @@
-// This is a custom hook that checks if the user is authenticated or not. It uses the useQuery hook from react-query to make a request to the server to check if the user is authenticated. If the user is authenticated, it returns the user object, otherwise it returns null. The staleTime and gcTime options are set to 5 minutes to refetch the data after 5 minutes.
+// This is hook which check if user is signed in or not.
+// It used inside "@components/PublicRoute.tsx"
+// This also used "@components/PrivateRoute.tsx
+// If user is signed in they will be able to access the protected routes and also get the user data.
 import { axiosInstance } from "@/lib/axios";
 import { useQuery } from "@tanstack/react-query";
 
@@ -6,15 +9,20 @@ export function useAuth() {
     return useQuery({
         queryKey: ['auth'],
         queryFn: async () => {
-            try{
-                const response = await axiosInstance.get("/auth/is-authenticated")
+            try {
+                const [authResponse, userDataResponse] = await Promise.all([
+                    axiosInstance.get("/auth/is-authenticated"),
+                    axiosInstance.get('/auth/user-data')
+                ]);
 
-                return response.data;
+                return {
+                    isAuthenticated: authResponse.data,
+                    user: userDataResponse.data.user
+                };
             }
-            catch(err) {
+            catch {
                 return null;
             }
         },
     })
 }
-

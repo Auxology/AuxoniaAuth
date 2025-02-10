@@ -1,5 +1,5 @@
 import {Link, useNavigate} from "react-router-dom";
-import {Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle} from "@/components/ui/./card.tsx";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/./card.tsx";
 import {useForm} from "react-hook-form";
 import {z} from "zod";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -20,7 +20,7 @@ export default function PasswordRecoveryCodePage() {
             message: "Your one-time password must be 6 characters.",
         }),
     })
-    
+
     const form = useForm<z.infer<typeof FormSchema>>({
         resolver: zodResolver(FormSchema),
         defaultValues: {
@@ -32,6 +32,10 @@ export default function PasswordRecoveryCodePage() {
         const response = await axiosInstance.post("auth/forgot-password/code", {code: pin})
 
         return response.data
+    }
+
+    const resendCode = async () => {
+        await axiosInstance.post("auth/forget-password/resend")
     }
 
     const mutate = useMutation({
@@ -52,23 +56,45 @@ export default function PasswordRecoveryCodePage() {
             })
         }
     })
-    
+
+    const resendMutation = useMutation({
+        mutationFn: resendCode,
+        onSuccess: () => {
+            toast({
+                title: "Success",
+                description: "Code resent successfully.",
+            })
+        },
+        onError: (error: AxiosError) => {
+            toast({
+                title: "Error",
+                description: error.response?.status,
+                variant: "destructive",
+            })
+        }
+    })
+
     function onSubmit(values: z.infer<typeof FormSchema>) {
         mutate.mutate(values.pin)
     }
-    
+
+    function resend() {
+        resendMutation.mutate()
+    }
+
     return (
         <div className="bg-background min-h-screen flex justify-center items-center text-headline">
-
-            <Card className="w-[40vh] space-y-2">
-
+            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
                 <CardHeader className="text-center gap-2">
-                    <CardTitle>Forgot Password</CardTitle>
-                    <CardDescription>Enter the code sent to your email.</CardDescription>
+                    <CardTitle className="text-headline text-2xl font-bold">
+                        Forgot Password
+                    </CardTitle>
+                    <CardDescription className="text-paragraph">
+                        Enter the code sent to your email.
+                    </CardDescription>
                 </CardHeader>
 
                 <CardContent>
-
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                             <FormField
@@ -76,44 +102,63 @@ export default function PasswordRecoveryCodePage() {
                                 name="pin"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Code</FormLabel>
+                                        <FormLabel className="text-headline">Code</FormLabel>
                                         <FormControl>
-                                            <InputOTP maxLength={6} {...field}>
+                                            <InputOTP
+                                                maxLength={6}
+                                                className="gap-2"
+                                                {...field}
+                                            >
                                                 <InputOTPGroup>
-                                                    <InputOTPSlot index={0} />
-                                                    <InputOTPSlot index={1} />
-                                                    <InputOTPSlot index={2} />
-                                                    <InputOTPSlot index={3} />
-                                                    <InputOTPSlot index={4} />
-                                                    <InputOTPSlot index={5} />
+                                                    {[...Array(6)].map((_, i) => (
+                                                        <InputOTPSlot
+                                                            key={i}
+                                                            index={i}
+                                                            className="border-paragraph/20 text-headline bg-background/50"
+                                                        />
+                                                    ))}
                                                 </InputOTPGroup>
                                             </InputOTP>
-
                                         </FormControl>
-                                        <FormDescription>
-                                            Please enter the 6-digit code sent to your email.
+                                        <FormDescription className="space-y-2">
+                                            <p className="text-paragraph">
+                                                Please enter the 6-digit code sent to your email.
+                                            </p>
+                                            <Button
+                                                onClick={resend}
+                                                type="button"
+                                                variant="link"
+                                                className="text-paragraph hover:text-headline transition-colors p-0"
+                                            >
+                                                Resend code
+                                            </Button>
                                         </FormDescription>
-                                        <FormMessage />
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
-                            
-                            <Button type="submit" className="w-full">
-                                Submit
-                            </Button>
 
-                            <CardFooter className="text-center">
-                                <Link className="text-center" to="/forgot-password">Back</Link>
-                            </CardFooter>
+                            <div className="space-y-4">
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                                >
+                                    Submit
+                                </Button>
 
+                                <div className="flex justify-center">
+                                    <Link
+                                        to="/forgot-password"
+                                        className="text-paragraph hover:text-headline transition-colors"
+                                    >
+                                        Back
+                                    </Link>
+                                </div>
+                            </div>
                         </form>
                     </Form>
-
-
                 </CardContent>
-
             </Card>
-            
         </div>
     )
 }

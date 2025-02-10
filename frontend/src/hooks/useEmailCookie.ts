@@ -1,8 +1,9 @@
+// those are the hooks that are used to check if the user has the email cookie or the forgot password cookie
+// those hooks are used inside "@components/PublicRoute" to redirect the user to the correct page
 import {useQuery} from "@tanstack/react-query";
 import {axiosInstance} from "@/lib/axios.ts";
 
 
-// This function check if user has cookie for email verification
 export function useVerifyEmailCookie () {
     return useQuery({
         queryKey: ['verify-email'],
@@ -11,7 +12,7 @@ export function useVerifyEmailCookie () {
                 const response = await axiosInstance.get("/auth/verify-email/check")
                 return response.data;
             }
-            catch(err) {
+            catch {
                 return null;
             }
         },
@@ -26,7 +27,7 @@ export function useForgotPasswordCookie () {
                 const response = await axiosInstance.get("/auth/forgot-password/check")
                 return response.data
             }
-            catch(err) {
+            catch {
                 return null;
             }
         },

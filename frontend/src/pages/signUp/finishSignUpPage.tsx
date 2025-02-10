@@ -58,59 +58,72 @@ export default function FinishSignUpPage() {
 
     return (
         <div className="bg-background min-h-screen flex justify-center items-center text-headline">
+            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
+                <CardHeader className="text-center gap-2">
+                    <CardTitle className="text-headline text-2xl font-bold">
+                        Sign Up
+                    </CardTitle>
+                    <CardDescription className="text-paragraph">
+                        Complete your account setup
+                    </CardDescription>
+                </CardHeader>
 
-            <Card className="w-[40vh] space-y-2">
-                    <CardHeader className="text-center gap-2">
-                        <CardTitle>Sign Up</CardTitle>
-                        <CardDescription>Finish Sign Up</CardDescription>
-                    </CardHeader>
+                <CardContent>
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                            <FormField
+                                control={form.control}
+                                name="username"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-headline">Username</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="johndoe"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormDescription className="text-paragraph">
+                                            This is your public display name.
+                                        </FormDescription>
+                                        <FormMessage className="text-button"/>
+                                    </FormItem>
+                                )}
+                            />
 
-                    <CardContent>
+                            <FormField
+                                control={form.control}
+                                name="password"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel className="text-headline">Password</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="password"
+                                                placeholder="********"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormDescription className="text-paragraph">
+                                            Password must be at least 8 characters long.
+                                        </FormDescription>
+                                        <FormMessage className="text-button"/>
+                                    </FormItem>
+                                )}
+                            />
 
-                        <Form {...form}>
-                            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-
-                                <FormField
-                                    control={form.control}
-                                    name="username"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Username</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="shadcn" {...field} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                This is your public display name.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="password"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Password</FormLabel>
-                                            <FormControl>
-                                                <Input type="password" placeholder="********" {...field} />
-                                            </FormControl>
-                                            <FormDescription>
-                                                Password must be at least 8 characters long.
-                                            </FormDescription>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <Button type="submit">Submit</Button>
-                            </form>
-                        </Form>
-
-                    </CardContent>
+                            <Button
+                                type="submit"
+                                className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                            >
+                                Complete Sign Up
+                            </Button>
+                        </form>
+                    </Form>
+                </CardContent>
             </Card>
-
         </div>
     )
 }

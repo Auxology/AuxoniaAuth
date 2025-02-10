@@ -1,4 +1,4 @@
-import {Card, CardHeader, CardTitle, CardContent} from "@/components/ui/card.tsx";
+import {Card, CardHeader, CardTitle, CardContent, CardDescription} from "@/components/ui/card.tsx";
 import {z} from "zod";
 import {useForm} from "react-hook-form";
 import {zodResolver} from "@hookform/resolvers/zod";
@@ -62,12 +62,15 @@ export default function ResetPasswordPage() {
     }
 
     return (
-        <div className="bg-background flex flex-col items-center justify-center h-screen">
-
-            <Card className="w-[40vh] space-y-2">
-
-                <CardHeader>
-                    <CardTitle>Reset Password</CardTitle>
+        <div className="bg-background min-h-screen flex justify-center items-center text-headline">
+            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
+                <CardHeader className="text-center gap-2">
+                    <CardTitle className="text-headline text-2xl font-bold">
+                        Reset Password
+                    </CardTitle>
+                    <CardDescription className="text-paragraph">
+                        Enter your new password below.
+                    </CardDescription>
                 </CardHeader>
 
                 <CardContent>
@@ -78,11 +81,16 @@ export default function ResetPasswordPage() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel className="text-headline">Password</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="Enter your password" {...field} />
+                                            <Input
+                                                type="password"
+                                                placeholder="Enter your password"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
@@ -91,21 +99,31 @@ export default function ResetPasswordPage() {
                                 name="confirmPassword"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Confirm Password</FormLabel>
+                                        <FormLabel className="text-headline">Confirm Password</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="Confirm your password" {...field} />
+                                            <Input
+                                                type="password"
+                                                placeholder="Confirm your password"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
-                            <Button type="submit">Reset Password</Button>
+                            <div className="space-y-4">
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                                >
+                                    Reset Password
+                                </Button>
+                            </div>
                         </form>
                     </Form>
                 </CardContent>
-
             </Card>
-
         </div>
     )
 }

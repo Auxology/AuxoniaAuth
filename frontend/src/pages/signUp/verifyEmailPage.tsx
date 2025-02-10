@@ -94,56 +94,71 @@ export default function VerifyEmailPage() {
     }
 
     return (
-        <main className="bg-background min-h-screen flex justify-center items-center text-headline">
-
-            <Card className="w-[40vh] space-y-2">
-
+        <div className="bg-background min-h-screen flex justify-center items-center text-headline">
+            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
                 <CardHeader className="text-center gap-2">
-                    <CardTitle>Sign Up</CardTitle>
-                    <CardDescription>Enter code to verify email.</CardDescription>
+                    <CardTitle className="text-headline text-2xl font-bold">
+                        Sign Up
+                    </CardTitle>
+                    <CardDescription className="text-paragraph">
+                        Enter code to verify email.
+                    </CardDescription>
                 </CardHeader>
 
-                <CardContent className="">
-
+                <CardContent>
                     <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                             <FormField
                                 control={form.control}
                                 name="pin"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Code</FormLabel>
+                                        <FormLabel className="text-headline">Code</FormLabel>
                                         <FormControl>
-                                            <InputOTP maxLength={6} {...field}>
+                                            <InputOTP
+                                                maxLength={6}
+                                                className="gap-2"
+                                                {...field}
+                                            >
                                                 <InputOTPGroup>
-                                                    <InputOTPSlot index={0} />
-                                                    <InputOTPSlot index={1} />
-                                                    <InputOTPSlot index={2} />
-                                                    <InputOTPSlot index={3} />
-                                                    <InputOTPSlot index={4} />
-                                                    <InputOTPSlot index={5} />
+                                                    {[...Array(6)].map((_, i) => (
+                                                        <InputOTPSlot
+                                                            key={i}
+                                                            index={i}
+                                                            className="border-paragraph/20 text-headline bg-background/50"
+                                                        />
+                                                    ))}
                                                 </InputOTPGroup>
                                             </InputOTP>
-
                                         </FormControl>
-                                        <button onClick={resend} type="button" className="text-buttonText">Resend code</button>
-                                        <FormDescription>
-                                            Please enter the 6-digit code sent to your email.
+                                        <FormDescription className="space-y-2">
+                                            <p className="text-paragraph">
+                                                Please enter the 6-digit code sent to your email.
+                                            </p>
+                                            <Button
+                                                onClick={resend}
+                                                type="button"
+                                                variant="link"
+                                                className="text-paragraph hover:text-headline transition-colors p-0"
+                                            >
+                                                Resend code
+                                            </Button>
                                         </FormDescription>
-                                        <FormMessage />
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
 
-                            <Button type="submit">Submit</Button>
-
+                            <Button
+                                type="submit"
+                                className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                            >
+                                Verify Email
+                            </Button>
                         </form>
                     </Form>
-
                 </CardContent>
-
             </Card>
-
-        </main>
+        </div>
     )
 }

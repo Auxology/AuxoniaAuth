@@ -2,7 +2,7 @@
 // These temporary sessions are similar to the ones used in the signup process
 import type { Request, Response } from "express";
 import { validateEmail } from "../utils/email.js";
-import {getUserFromEmail, resetUserPassword} from "../utils/user.js";
+import {compareUserPasswords, getUserFromEmail, resetUserPassword} from "../utils/user.js";
 import {
     checkIfResendingForgotPasswordCodeIsLocked,
     createForgotPasswordCode, createForgotPasswordSession,
@@ -126,6 +126,7 @@ export const verifyForgotPassword = async(req: Request, res: Response):Promise<v
 export const resetPassword = async(req: Request, res: Response):Promise<void> => {
     try {
         const email = req.forgot_password_email;
+        const encryptedEmail = encrypt(email);
 
         if(!email){
             res.status(400).json({ error: 'Invalid data' });
@@ -157,6 +158,15 @@ export const resetPassword = async(req: Request, res: Response):Promise<void> =>
             return;
         }
 
+        // Check if password has been used previously
+        const isUsed = await compareUserPasswords(encryptedEmail, password);
+
+
+        if(isUsed) {
+            res.status(400).json({error: 'Password has been used previously'});
+            return;
+        }
+
         // Hash Password
         const hashedPassword = await hashPassword(password);
 
@@ -165,9 +175,6 @@ export const resetPassword = async(req: Request, res: Response):Promise<void> =>
             return
         }
 
-        const encryptedEmail = encrypt(email);
-
-        //TODO: Check if password is same as the previous one
 
         // Update User, this also deletes the session
         await resetUserPassword(encryptedEmail, hashedPassword);

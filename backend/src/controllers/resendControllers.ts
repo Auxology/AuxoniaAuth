@@ -46,7 +46,7 @@ export const resendEmailVerificationCode = async (req: Request, res: Response):P
 
 export const resendForgotPasswordCode = async (req: Request, res: Response):Promise<void> => {
     try{
-        const email = req.cookies.user_email as string;
+        const email = req.cookies.reset_email as string;
 
         if(!email) {
             res.status(401).json({message: "Unauthorized"});

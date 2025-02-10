@@ -17,6 +17,7 @@ import {useMutation} from "@tanstack/react-query";
 import {toast} from "@/hooks/use-toast.ts";
 import {AxiosError} from "axios";
 import {useNavigate} from "react-router-dom";
+import {Link} from "react-router-dom";
 
 export default function ForgotPasswordPage() {
 
@@ -65,45 +66,58 @@ export default function ForgotPasswordPage() {
 
     return (
         <div className="bg-background min-h-screen flex justify-center items-center text-headline">
-
-            <Card className="w-[40vh] space-y-2">
-
+            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
                 <CardHeader className="text-center gap-2">
-                    <CardTitle>Forgot Password</CardTitle>
-                    <CardDescription>Enter your email to reset your password.</CardDescription>
+                    <CardTitle className="text-headline text-2xl font-bold">
+                        Forgot Password
+                    </CardTitle>
+                    <CardDescription className="text-paragraph">
+                        Enter your email to reset your password.
+                    </CardDescription>
                 </CardHeader>
 
                 <CardContent>
-
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-
                             <FormField
                                 control={form.control}
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel className="text-headline">Email</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="johndoe@example.com" {...field} />
+                                            <Input
+                                                placeholder="johndoe@example.com"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
 
-                            <Button type="submit">Reset Password</Button>
+                            <div className="space-y-4">
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                                >
+                                    Reset Password
+                                </Button>
+                            </div>
                         </form>
                     </Form>
-
                 </CardContent>
 
-                <CardFooter>
-                    <a href="/login" className="text-center text-sm text-gray-600">Remembered your password? Login</a>
+                <CardFooter className="justify-center">
+                    <Link
+                        to="/login"
+                        className="text-paragraph hover:text-headline transition-colors text-sm"
+                    >
+                        Remembered your password? Login
+                    </Link>
                 </CardFooter>
-
             </Card>
-
         </div>
     )
 }

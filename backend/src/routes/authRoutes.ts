@@ -47,7 +47,7 @@ authRoutes.post("/change-email/resend", isAuthenticated, resendEmailChangeCode);
 
 // This routes will require user to be logged in
 authRoutes.post("/delete-account", isAuthenticated, deleteAccount);
-authRoutes.post("/user-data", isAuthenticated, getUserData);
+authRoutes.get("/user-data", isAuthenticated, getUserData);
 authRoutes.post("/request-email-change", isAuthenticated, requestEmailChange);
 authRoutes.post("/verify-email-change-code", isAuthenticated, verifyCodeForEmailChange);
 authRoutes.post("/change-email", isAuthenticated, changeEmailProtection, changeEmail)

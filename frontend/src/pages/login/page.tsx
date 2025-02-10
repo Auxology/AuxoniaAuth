@@ -67,29 +67,33 @@ export default function LoginPage() {
 
     return (
         <div className="bg-background min-h-screen flex justify-center items-center text-headline">
-
-            <Card className="w-[40vh] space-y-2">
-
+            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
                 <CardHeader className="text-center gap-2">
-                    <CardTitle>Login</CardTitle>
-                    <CardDescription>Login to continue your journey.</CardDescription>
+                    <CardTitle className="text-headline text-2xl font-bold">
+                        Login
+                    </CardTitle>
+                    <CardDescription className="text-paragraph">
+                        Login to continue your journey.
+                    </CardDescription>
                 </CardHeader>
 
                 <CardContent>
-
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-
                             <FormField
                                 control={form.control}
                                 name="email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel className="text-headline">Email</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="johndoe@example.com" {...field} />
+                                            <Input
+                                                placeholder="johndoe@example.com"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
@@ -99,30 +103,49 @@ export default function LoginPage() {
                                 name="password"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Password</FormLabel>
+                                        <FormLabel className="text-headline">Password</FormLabel>
                                         <FormControl>
-                                            <Input type="password" placeholder="********" {...field} />
+                                            <Input
+                                                type="password"
+                                                placeholder="********"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
                                         </FormControl>
                                         <FormDescription>
-                                            <Link to="/forgot-password" className="text-primary">Forgot password?</Link>
+                                            <Link
+                                                to="/forgot-password"
+                                                className="text-paragraph hover:text-headline transition-colors"
+                                            >
+                                                Forgot password?
+                                            </Link>
                                         </FormDescription>
-                                        <FormMessage />
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
 
-                            <Button type="submit">Login</Button>
+                            <div className="space-y-4">
+                                <Button
+                                    type="submit"
+                                    className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                                >
+                                    Login
+                                </Button>
+                            </div>
                         </form>
                     </Form>
-
                 </CardContent>
 
-                <CardFooter>
-                    <Link to="/" className="text-center text-sm text-gray-600">Don't have an account? Sign Up</Link>
+                <CardFooter className="justify-center">
+                    <Link
+                        to="/"
+                        className="text-paragraph hover:text-headline transition-colors text-sm"
+                    >
+                        Don't have an account? Sign Up
+                    </Link>
                 </CardFooter>
-
             </Card>
-
         </div>
     )
 }

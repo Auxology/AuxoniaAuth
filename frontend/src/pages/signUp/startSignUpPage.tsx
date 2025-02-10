@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import {z} from "zod"
 import {emailSchema} from "@/lib/schemas.ts";
 
-import {Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage} from "@/components/ui/form.tsx";
+import {Form, FormField, FormItem, FormLabel, FormControl, FormMessage} from "@/components/ui/form.tsx";
 import {Input} from "@/components/ui/input.tsx";
 import {Button} from "@/components/ui/button.tsx";
 import {useMutation} from "@tanstack/react-query";
@@ -66,15 +66,17 @@ export default function StartSignUpPage() {
 
     return (
         <div className="bg-background min-h-screen flex justify-center items-center text-headline">
-
-            <Card className="w-[40vh] space-y-2">
-
+            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
                 <CardHeader className="text-center gap-2">
-                    <CardTitle>Sign Up</CardTitle>
-                    <CardDescription>Enter your email to start your journey.</CardDescription>
+                    <CardTitle className="text-headline text-2xl font-bold">
+                        Sign Up
+                    </CardTitle>
+                    <CardDescription className="text-paragraph">
+                        Enter your email to start your journey.
+                    </CardDescription>
                 </CardHeader>
 
-                <CardContent className="">
+                <CardContent>
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                             <FormField
@@ -82,30 +84,37 @@ export default function StartSignUpPage() {
                                 name="email"
                                 render={({field}) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel className="text-headline">Email</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="johndoe@example.com" {...field} />
+                                            <Input
+                                                placeholder="johndoe@example.com"
+                                                className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                {...field}
+                                            />
                                         </FormControl>
-                                        <FormDescription>
-
-                                        </FormDescription>
-                                        <FormMessage/>
+                                        <FormMessage className="text-button"/>
                                     </FormItem>
                                 )}
                             />
-                            <Button className="w-full" type="submit">Submit</Button>
+                            <Button
+                                type="submit"
+                                className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                            >
+                                Submit
+                            </Button>
                         </form>
                     </Form>
-
                 </CardContent>
 
-                <CardFooter>
-                    <Link to="/login" className="text-center">Already have an account? Login</Link>
+                <CardFooter className="justify-center">
+                    <Link
+                        to="/login"
+                        className="text-paragraph hover:text-headline transition-colors text-sm"
+                    >
+                        Already have an account? Login
+                    </Link>
                 </CardFooter>
-
-
             </Card>
-
         </div>
     )
 }

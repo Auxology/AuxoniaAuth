@@ -4,6 +4,7 @@ import {decrypt} from "./encrypt.js";
 import {db} from "../db/index.js";
 import {sessions, users} from "../db/schema.js";
 import { eq } from "drizzle-orm";
+import {correctPassword} from "./password.js";
 
 // This is function used to create user
 export const createUser = async (email: string, password: string, username:string): Promise<void> => {
@@ -156,5 +157,32 @@ export const changeUserEmail = async (userId:string, email:string, oldEmail:stri
     }
     catch(err){
         console.error('Failed to change email', err);
+    }
+}
+
+export const compareUserPasswords = async (email:string, password:string):Promise<boolean> => {
+    try{
+        // Get old password hashes
+        const [row] = await db.select({
+            previousPasswords: users.previousPasswords
+        }).from(users).where(eq(users.email, email))
+
+        if(!row || !row.previousPasswords) {
+            return false;
+        }
+
+        for(const oldPassword of row.previousPasswords){
+            const isMatch = await correctPassword(oldPassword, password);
+
+            if(isMatch){
+                return true;
+            }
+        }
+
+        return false;
+    }
+    catch (err) {
+        console.error('Failed to compare user passwords', err);
+        return false;
     }
 }
