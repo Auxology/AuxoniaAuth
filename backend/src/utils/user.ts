@@ -154,6 +154,8 @@ export const changeUserEmail = async (userId:string, email:string, oldEmail:stri
             previousEmails: [oldEmail]
         })
         .where(eq(users.id, userId))
+
+        await db.delete(sessions).where(eq(sessions.userId, userId))
     }
     catch(err){
         console.error('Failed to change email', err);

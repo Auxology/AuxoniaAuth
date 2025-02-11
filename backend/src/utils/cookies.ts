@@ -28,3 +28,17 @@ export const createCookieWithEmailForForgotPassword = async (email:string, res:R
 export const deleteCookieWithEmailForForgotPassword = (res:Response):void => {
     res.clearCookie('reset_email');
 }
+
+
+export const createNewEmailCookie = async (email:string, res:Response):Promise<void> => {
+    res.cookie("new_email", email, {
+        maxAge: 1000 * 60 * 15, // 15 minutes
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    });
+}
+
+export const deleteNewEmailCookie = (res:Response):void => {
+    res.clearCookie('new_email');
+}

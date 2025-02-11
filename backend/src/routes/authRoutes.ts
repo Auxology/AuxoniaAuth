@@ -2,7 +2,7 @@ import express from "express";
 import {finishSignup, signup, verifyEmail} from "../controllers/signupControllers.js";
 import {login, logout} from "../controllers/loginControllers.js";
 import {
-    changeEmailProtection,
+    changeEmailProtection, changeEmailProtectionPlus,
     forgetPasswordProtection,
     isAuthenticated,
     temporarySessionProtection
@@ -19,7 +19,7 @@ import {
     requestEmailChange,
     verifyCodeForEmailChange,
     deleteAccount,
-    getUserData,
+    getUserData, startVerifyingNewEmail, verifyNewEmail,
 } from "../controllers/userController.js";
 import {
     checkAuth, checkForForgotPasswordSession,
@@ -48,9 +48,15 @@ authRoutes.post("/change-email/resend", isAuthenticated, resendEmailChangeCode);
 // This routes will require user to be logged in
 authRoutes.post("/delete-account", isAuthenticated, deleteAccount);
 authRoutes.get("/user-data", isAuthenticated, getUserData);
-authRoutes.post("/request-email-change", isAuthenticated, requestEmailChange);
-authRoutes.post("/verify-email-change-code", isAuthenticated, verifyCodeForEmailChange);
-authRoutes.post("/change-email", isAuthenticated, changeEmailProtection, changeEmail)
+
+// This route will be used to change user email
+authRoutes.post("/change-email", isAuthenticated, requestEmailChange);
+authRoutes.post("/change-email/code", isAuthenticated, verifyCodeForEmailChange);
+authRoutes.post("/change-email/new", isAuthenticated, changeEmailProtection, startVerifyingNewEmail)
+authRoutes.post("/change-email/new/verify", isAuthenticated, changeEmailProtection, verifyNewEmail);
+authRoutes.post("/change-email/finish", isAuthenticated, changeEmailProtection, changeEmailProtectionPlus, changeEmail)
+
+
 
 // This route will be used to check if user is logged in
 authRoutes.get("/is-authenticated", isAuthenticated, checkAuth);

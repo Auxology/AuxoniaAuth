@@ -7,7 +7,10 @@ import { users } from '../db/schema.js';
 // Email validation function often used in signup process
 export const validateEmail = async (email: string):Promise<boolean> => {
     try {
-        emailSchema.safeParse(email);
+        const isValid = emailSchema.parse(email);
+
+        if(!isValid) return false;
+
 
         return true;
     }

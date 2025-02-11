@@ -384,6 +384,99 @@ export const deleteChangeEmailSession = async (userId: string):Promise<void> => 
     }
 }
 
+// Those are functions which will be used for verifying new email
+export const createNewEmailCode = async (userId: string):Promise<void> => {
+    const code = crypto.randomBytes(3).toString('hex');
+    const expiryDate = 60 * 15;  // 15 minutes
+
+    try {
+        await redis.setEx(`new_email_code:${userId}`, expiryDate, code);
+        // In production, we should send this code to the user's email
+        console.log(`New email code ${code} created for ${userId}`);
+    }
+    catch(err){
+        console.error('Failed to store new email code', err);
+    }
+}
+
+export const verifyNewEmailCode = async (userId: string, code: string):Promise<boolean> => {
+    try {
+        const getCode = await redis.get(`new_email_code:${userId}`);
+
+        if(!getCode){
+            return false;
+        }
+
+        if(getCode !== code){
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify new email code', err);
+        return false;
+    }
+}
+
+export const deleteNewEmailCode = async (userId: string):Promise<void> => {
+    try {
+        await redis.del(`new_email_code:${userId}`);
+    }
+    catch(err){
+        console.error('Failed to delete new email code', err);
+    }
+}
+
+export const createChangeEmailSessionWithNewEmail = async (userId: string, newEmail: string):Promise<string | null> => {
+    try {
+        const sessionToken = crypto.randomUUID();
+        const expiryDate = 60 * 15;  // 15 minutes
+
+        const changeEmailData = {
+            sessionToken,
+            userId,
+            newEmail,
+            expiryDate
+        }
+
+        await redis.setEx(`new_change_email_session:${userId}`, expiryDate, JSON.stringify(changeEmailData));
+
+        console.log(`Change email session created for ${userId}`);
+
+        return sessionToken;
+    }
+    catch(err){
+        console.error('Failed to create change email session with new email', err);
+        return null;
+    }
+}
+
+export const verifyChangeEmailSessionWithNewEmail = async (userId: string):Promise<boolean> => {
+    try {
+        const changeEmailSession = await redis.get(`new_change_email_session:${userId}`);
+
+        if(!changeEmailSession){
+            console.error('Change email session with new email not found');
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify change email session with new email', err);
+        return false;
+    }
+}
+
+export const deleteChangeEmailSessionWithNewEmail = async (userId: string):Promise<void> => {
+    try {
+        await redis.del(`new_change_email_session:${userId}`);
+    }
+    catch(err){
+        console.error('Failed to delete change email session with new email', err);
+    }
+}
 
 // Lock functions
 // You might wonder why do I create lock for resending email verification code inside redis?

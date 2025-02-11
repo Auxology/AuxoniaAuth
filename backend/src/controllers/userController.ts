@@ -5,13 +5,17 @@ import {
     verifyChangeEmailCode,
     deleteChangeEmailCode,
     createChangeEmailSession,
-    deleteChangeEmailSession
+    deleteChangeEmailSession,
+    createNewEmailCode,
+    verifyNewEmailCode,
+    deleteNewEmailCode, deleteChangeEmailSessionWithNewEmail, createChangeEmailSessionWithNewEmail,
 } from "../libs/redis.js";
-import {createTokenForEmailChange, deleteTokenForEmailChange} from "../libs/jwt-sessions.js";
+import {createTokenForEmailChange, createTokenForNewEmail, deleteTokenForEmailChange, deleteTokenForNewEmail} from "../libs/jwt-sessions.js";
 import {validateEmail} from "../utils/email.js";
-import {encrypt} from "../utils/encrypt.js";
 import {changeUserEmail, deleteUser, getEmailFromUserId, getUser} from "../utils/user.js";
 import {deleteSession} from "../libs/express-session.js";
+import {createNewEmailCookie, deleteNewEmailCookie} from "../utils/cookies.js";
+import {encrypt} from "../utils/encrypt.js";
 
 
 
@@ -36,6 +40,7 @@ export const requestEmailChange = async (req: Request, res: Response):Promise<vo
     }
 }
 
+// User has to verify old email before changing it
 export const verifyCodeForEmailChange = async (req: Request, res: Response):Promise<void> => {
     try{
         // Check if user is logged in
@@ -68,12 +73,19 @@ export const verifyCodeForEmailChange = async (req: Request, res: Response):Prom
     }
 }
 
-export const changeEmail = async (req: Request, res: Response):Promise<void> => {
+// User should now start verifying the new email
+export const startVerifyingNewEmail = async (req: Request, res: Response):Promise<void> => {
     try{
         const userId = req.session.userId;
+        const emailToken = req.cookies["email-change"];
 
         if(!userId){
             res.status(401).json({message: "You are not logged in"});
+            return;
+        }
+
+        if(!emailToken){
+            res.status(401).json({message: "Invalid session"});
             return;
         }
 
@@ -87,22 +99,117 @@ export const changeEmail = async (req: Request, res: Response):Promise<void> => 
             return;
         }
 
-        const encryptedEmail = encrypt(newEmail);
+        // Create cookie for new email
+        await createNewEmailCookie(newEmail, res);
 
-        // Get Old email from Database
-        const oldEmail = await getEmailFromUserId(userId);
+        // Send the code to new email
+        await createNewEmailCode(userId);
 
-        if(oldEmail===null){
-            res.status(500).json({message: "Internal Server Error"});
+        res.status(200).json({message: "Verify your new email"});
+    }
+    catch (err) {
+        console.error(err)
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
+// This is where user will verify new email
+export const verifyNewEmail = async (req: Request, res: Response):Promise<void> => {
+    try{
+        const userId = req.session.userId;
+        const emailToken = req.cookies["email-change"];
+        const newEmail = req.cookies.new_email as string
+
+        if(!userId){
+            res.status(401).json({message: "You are not logged in"});
             return;
         }
 
-        // Update email
-        await changeUserEmail(userId, encryptedEmail, oldEmail);
-        await deleteChangeEmailSession(userId);
-        deleteTokenForEmailChange(res);
+        if(!emailToken){
+            res.status(401).json({message: "Invalid session"});
+            return;
+        }
 
-        res.status(200).json({message: "Email changed"});
+        if(!newEmail){
+            res.status(401).json({message: "Invalid session"});
+            return;
+        }
+
+        // Check if their code is valid
+        const isValid = await verifyNewEmailCode(userId, req.body.code);
+
+        if(!isValid){
+            res.status(400).json({message: "Invalid code"});
+            return;
+        }
+
+        await deleteNewEmailCode(userId);
+
+        // Now we create session with new email
+
+        // Create new session on top of old change email session
+        const session = await createChangeEmailSessionWithNewEmail(userId, newEmail);
+
+        createTokenForNewEmail(userId,session!,res);
+
+        res.status(200).json({message: "New email verified"});
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
+export const changeEmail = async (req: Request, res: Response):Promise<void> => {
+    try{
+        const userId = req.session.userId;
+
+        if(!userId){
+            res.status(401).json({message: "You are not logged in"});
+            return;
+        }
+
+        // Old email token
+        const emailToken = req.cookies["email-change"];
+
+        if(!emailToken){
+            res.status(401).json({message: "Invalid session"});
+            return;
+        }
+
+        // New email token
+        const newEmailToken = req.cookies["new-email-change"];
+
+        if(!newEmailToken){
+            res.status(401).json({message: "Invalid session"});
+            return;
+        }
+
+        const newEmail = req.cookies.new_email as string;
+
+        // Encrypt new email
+        const encryptedEmail = encrypt(newEmail);
+
+        // Get old email
+        const oldEmail = await getEmailFromUserId(userId);
+
+        if(!oldEmail){
+            res.status(404).json({message: "User not found"});
+            return;
+        }
+
+        // Delete tokens
+        deleteTokenForEmailChange(res);
+        deleteTokenForNewEmail(res);
+        deleteNewEmailCookie(res);
+        await deleteChangeEmailSession(userId);
+        await deleteChangeEmailSessionWithNewEmail(userId);
+
+        //This also automatically deletes the session :)))
+        await changeUserEmail(userId, encryptedEmail, oldEmail);
+
+
+        res.status(200).json({message: "Email changed successfully"});
     }
     catch (err) {
         console.error(err);
@@ -130,9 +237,6 @@ export const deleteAccount = async (req: Request, res: Response):Promise<void> =
 
         // Proceed to delete the account
         await deleteUser(userId);
-
-        // We also need to destroy the session to log the user out
-        await deleteSession(sessionId);
 
         res.json({message: "Account deleted successfully"});
     }

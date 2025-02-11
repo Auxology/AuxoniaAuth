@@ -1,7 +1,7 @@
 import type{ Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import {
-    verifyChangeEmailSession,
+    verifyChangeEmailSession, verifyChangeEmailSessionWithNewEmail,
     verifyForgotPasswordSession,
     verifyTemporarySession
 } from "../libs/redis.js";
@@ -105,6 +105,34 @@ export const changeEmailProtection = async (req: Request, res: Response, next: F
 
         // Now we check if the token exists in the database
         const verify = await verifyChangeEmailSession(decoded.userId);
+
+        if(!verify) {
+            res.status(401).json({message: "Unauthorized - Token Expired"});
+            return;
+        }
+
+        next();
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
+export const changeEmailProtectionPlus = async (req: Request, res: Response, next: Function):Promise<void> => {
+    console.log('changeEmailProtectionPlus');
+    try {
+        const token = req.cookies['new-email-change'];
+
+        if(!token) {
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_KEY!) as JwtPayloadWithEmail;
+
+        // Now we check if the token exists in the database
+        const verify = await verifyChangeEmailSessionWithNewEmail(decoded.userId);
 
         if(!verify) {
             res.status(401).json({message: "Unauthorized - Token Expired"});
