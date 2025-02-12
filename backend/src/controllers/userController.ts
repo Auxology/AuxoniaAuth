@@ -8,12 +8,16 @@ import {
     deleteChangeEmailSession,
     createNewEmailCode,
     verifyNewEmailCode,
-    deleteNewEmailCode, deleteChangeEmailSessionWithNewEmail, createChangeEmailSessionWithNewEmail,
+    deleteNewEmailCode,
+    deleteChangeEmailSessionWithNewEmail,
+    createChangeEmailSessionWithNewEmail,
+    lockResendingChangeEmailCode,
+    checkIfResendingChangeEmailCodeIsLocked,
+    checkIfResendingChangeEmailCodeWithNewEmailIsLocked, lockResendingChangeEmailCodeWithNewEmail,
 } from "../libs/redis.js";
 import {createTokenForEmailChange, createTokenForNewEmail, deleteTokenForEmailChange, deleteTokenForNewEmail} from "../libs/jwt-sessions.js";
 import {validateEmail} from "../utils/email.js";
 import {changeUserEmail, deleteUser, getEmailFromUserId, getUser} from "../utils/user.js";
-import {deleteSession} from "../libs/express-session.js";
 import {createNewEmailCookie, deleteNewEmailCookie} from "../utils/cookies.js";
 import {encrypt} from "../utils/encrypt.js";
 
@@ -24,13 +28,35 @@ export const requestEmailChange = async (req: Request, res: Response):Promise<vo
     try {
         // Check if user is logged in
         const userId = req.session.userId;
+        const userInputtedEmail = req.body.email
+
+        const encrtypedEmail = encrypt(userInputtedEmail);
 
         if(!userId){
             res.status(401).json({message: "You are not logged in"});
             return;
         }
 
+        // Check if user is locked out
+        const isLocked = await checkIfResendingChangeEmailCodeIsLocked(userId);
+
+        if(isLocked){
+            res.status(409).json({message: "Too many requests"});
+            return;
+        }
+
+        // Get user email
+        const email = await getEmailFromUserId(userId);
+
+        if(email !== encrtypedEmail){
+            res.status(400).json({message: "Invalid email"});
+            return;
+        }
+
         await createChangeEmailCode(userId);
+
+        // Lock sending email code
+        await lockResendingChangeEmailCode(userId)
 
         res.status(200).json({message: "Email change code sent"});
     }
@@ -65,6 +91,7 @@ export const verifyCodeForEmailChange = async (req: Request, res: Response):Prom
         const session = await createChangeEmailSession(userId);
         createTokenForEmailChange(userId, session!, res);
 
+
         res.status(200).json({message: "Code verified"});
     }
     catch (err) {
@@ -89,6 +116,14 @@ export const startVerifyingNewEmail = async (req: Request, res: Response):Promis
             return;
         }
 
+        // Check if user is locked
+        const isLocked = await checkIfResendingChangeEmailCodeWithNewEmailIsLocked(userId);
+
+        if(isLocked){
+            res.status(409).json({message: "Too many requests"});
+            return;
+        }
+
         const newEmail = req.body.email;
 
         // Validate email
@@ -104,6 +139,9 @@ export const startVerifyingNewEmail = async (req: Request, res: Response):Promis
 
         // Send the code to new email
         await createNewEmailCode(userId);
+
+        // Lock sending email code
+        await lockResendingChangeEmailCodeWithNewEmail(userId);
 
         res.status(200).json({message: "Verify your new email"});
     }

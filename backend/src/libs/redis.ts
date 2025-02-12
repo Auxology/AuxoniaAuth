@@ -559,3 +559,26 @@ export const checkIfResendingChangeEmailCodeIsLocked = async (userId: string):Pr
         return true;
     }
 }
+
+export const lockResendingChangeEmailCodeWithNewEmail = async (userId: string):Promise<void> => {
+    try {
+        await redis.setEx(`locked_resend_change_email_code_with_new_email:${userId}`, 60, 'locked');
+    }
+    catch(err){
+        console.error('Failed to lock resending change email code with new email', err);
+    }
+}
+
+export const checkIfResendingChangeEmailCodeWithNewEmailIsLocked = async (userId: string):Promise<boolean> => {
+    try {
+        const isLocked = await redis.exists(`locked_resend_change_email_code_with_new_email:${userId}`);
+
+        if(!isLocked) return false;
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to check if resending change email code with new email is locked', err);
+        return true;
+    }
+}

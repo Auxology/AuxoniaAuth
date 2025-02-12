@@ -1,7 +1,7 @@
 // This button used to log out the user
 
-import { axiosInstance } from "@/lib/axios";
-import { Button } from "./ui/button";
+import { axiosInstance } from "@/lib/axios.ts";
+import { Button } from "./button.tsx";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "@/hooks/use-toast.ts";
 

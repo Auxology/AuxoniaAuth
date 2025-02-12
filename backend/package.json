@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch --env-file .env src/index.ts",
     "build": "tsc",
-    "start": "node --env-file .env dist/index.js"
+    "start": "node --env-file .env dist/index.js",
+    "populate": "tsx scripts/populateDb.ts"
   },
   "type": "module",
   "keywords": [],
@@ -19,6 +20,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "drizzle-orm": "^0.39.2",
+    "drizzle-seed": "^0.3.1",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",

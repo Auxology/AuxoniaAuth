@@ -95,6 +95,8 @@ export const resetUserPassword = async(email:string, password:string):Promise<vo
 
 export const deleteUser = async (userId:string):Promise<void> => {
     try {
+        // First delete all sessions(or else drizzle will throw error)
+        await db.delete(sessions).where(eq(sessions.userId, userId))
         await db.delete(users).where(eq(users.id, userId))
     }
     catch(err){
