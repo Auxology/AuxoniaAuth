@@ -179,6 +179,7 @@ export const compareUserPasswords = async (email:string, password:string):Promis
             const isMatch = await correctPassword(oldPassword, password);
 
             if(isMatch){
+                console.log('Password match found');
                 return true;
             }
         }
@@ -188,5 +189,34 @@ export const compareUserPasswords = async (email:string, password:string):Promis
     catch (err) {
         console.error('Failed to compare user passwords', err);
         return false;
+    }
+}
+
+export const updateUserPassword = async (userId:string, password:string, oldPassword: string):Promise<void> => {
+    try{
+        // First get the current previousPasswords array
+        const [user] = await db.select({
+            previousPasswords: users.previousPasswords
+        }).from(users).where(eq(users.id, userId));
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Create new array with old password added
+        const updatedPreviousPasswords = [...(user.previousPasswords || []), oldPassword];
+
+        // Update password and previous passwords array
+        await db.update(users).set({
+            password: password,
+            previousPasswords: updatedPreviousPasswords
+        }).where(eq(users.id, userId));
+
+        // Delete all sessions for this user
+        await db.delete(sessions).where(eq(sessions.userId, userId));
+    }
+    catch(err){
+        console.error('Failed to update user password', err);
+        throw err; // Re-throw the error to handle it in the calling function
     }
 }

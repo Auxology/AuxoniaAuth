@@ -103,3 +103,27 @@ export const createTokenForNewEmail = (userId:string, sessionToken:string, res:R
 export const deleteTokenForNewEmail = (res:Response):void => {
     res.clearCookie('new-email-change');
 }
+
+export const createTokenForChangePassword = (userId:string, sessionToken:string, res:Response):string => {
+    const payload = {
+        userId,
+        sessionToken
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_KEY!, {
+        expiresIn: '15m' // 15 minutes
+    });
+
+    res.cookie("change-password", token, {
+        maxAge: 1000 * 60 * 15, // 15 minutes
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    })
+
+    return token;
+}
+
+export const deleteTokenForChangePassword = (res:Response):void => {
+    res.clearCookie('change-password');
+}

@@ -17,6 +17,7 @@ import {axiosInstance} from "@/lib/axios.ts";
 export default function DashboardPage() {
     const { data, isLoading, error } = useAuth();
     const [step, setStep] = useState<'old-email' | 'verify-old' | 'new-email' | 'verify-new' | 'confirm'>('old-email');
+    const [passwordStep, setPasswordStep] = useState<'verify-email' | 'change-password'>('verify-email');
 
     const verificationSchema = z.object({
         code: z.string().min(6, { message: "Verification code must be 6 characters" }),
@@ -24,6 +25,11 @@ export default function DashboardPage() {
 
     const emailSchema = z.object({
         email: z.string().email({ message: "Please enter a valid email address" }),
+    });
+
+    const changePasswordSchema = z.object({
+        oldPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
+        newPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
     });
 
     const oldEmailForm = useForm<z.infer<typeof emailSchema>>({
@@ -44,6 +50,16 @@ export default function DashboardPage() {
     const newVerificationForm = useForm<z.infer<typeof verificationSchema>>({
         resolver: zodResolver(verificationSchema),
         defaultValues: { code: "" },
+    });
+
+    const passwordVerificationForm = useForm<z.infer<typeof verificationSchema>>({
+        resolver: zodResolver(verificationSchema),
+        defaultValues: { code: "" },
+    });
+
+    const changePasswordForm = useForm<z.infer<typeof changePasswordSchema>>({
+        resolver: zodResolver(changePasswordSchema),
+        defaultValues: { oldPassword: "", newPassword: "" },
     });
 
     const oldEmailSendCodeMutation = useMutation({
@@ -143,6 +159,55 @@ export default function DashboardPage() {
             })
         }
     })
+
+    const passwordSendCodeMutation = useMutation({
+        mutationFn: async () => {
+            const response = await axiosInstance.post("/auth/change-password");
+            return response.data;
+        },
+        onError() {
+            toast({
+                title: "Error",
+                description: "Failed to send verification code",
+            })
+        }
+    });
+
+    const passwordVerifyCodeMutation = useMutation({
+        mutationFn: async (data: { code: string }) => {
+            const response = await axiosInstance.post("/auth/change-password/code", data);
+            return response.data;
+        },
+        onSuccess() {
+            setPasswordStep('change-password');
+        },
+        onError() {
+            toast({
+                title: "Error",
+                description: "Invalid verification code",
+            })
+        }
+    });
+
+    const changePasswordMutation = useMutation({
+        mutationFn: async (data: { oldPassword: string, newPassword: string }) => {
+            const response = await axiosInstance.post("/auth/change-password/finish", data);
+            return response.data;
+        },
+        onSuccess() {
+            toast({
+                title: "Success",
+                description: "Password changed successfully",
+            });
+            window.location.reload();
+        },
+        onError() {
+            toast({
+                title: "Error",
+                description: "Failed to change password",
+            })
+        }
+    });
 
     if (isLoading) {
         return (
@@ -418,6 +483,126 @@ export default function DashboardPage() {
                                                     </Button>
                                                 </div>
                                             </div>
+                                        )}
+                                    </div>
+                                </SheetContent>
+                            </Sheet>
+
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className="w-full sm:w-auto border-paragraph/20 text-paragraph hover:bg-paragraph/10 hover:text-headline transition-colors"
+                                    >
+                                        Change Password
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent className="bg-background border-paragraph/20">
+                                    <SheetHeader className="space-y-4">
+                                        <SheetTitle className="text-2xl text-headline">
+                                            {passwordStep === 'verify-email' ? "Verify Email" : "Change Password"}
+                                        </SheetTitle>
+                                        <SheetDescription className="text-paragraph">
+                                            {passwordStep === 'verify-email' 
+                                                ? "First, let's verify your email address."
+                                                : "Enter your old password and new password."}
+                                        </SheetDescription>
+                                    </SheetHeader>
+
+                                    <div className="space-y-6 py-6">
+                                        {passwordStep === 'verify-email' && (
+                                            <Form {...passwordVerificationForm}>
+                                                <form onSubmit={passwordVerificationForm.handleSubmit((data) => {
+                                                    passwordVerifyCodeMutation.mutate(data);
+                                                })} className="space-y-4">
+                                                    <FormField
+                                                        control={passwordVerificationForm.control}
+                                                        name="code"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-headline">Verification Code</FormLabel>
+                                                                <FormControl>
+                                                                    <InputOTP maxLength={6} className="gap-2" {...field}>
+                                                                        <InputOTPGroup>
+                                                                            {[...Array(6)].map((_, i) => (
+                                                                                <InputOTPSlot
+                                                                                    key={i}
+                                                                                    index={i}
+                                                                                    className="border-paragraph/20 text-headline bg-background/50"
+                                                                                />
+                                                                            ))}
+                                                                        </InputOTPGroup>
+                                                                    </InputOTP>
+                                                                </FormControl>
+                                                                <FormMessage className="text-button"/>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <div className="flex flex-col gap-2">
+                                                        <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                            Verify Code
+                                                        </Button>
+                                                        <Button 
+                                                            type="button"
+                                                            variant="ghost"
+                                                            onClick={() => {
+                                                                passwordSendCodeMutation.mutate();
+                                                            }}
+                                                            className="w-full text-paragraph hover:text-headline hover:bg-paragraph/10"
+                                                        >
+                                                            Send Code
+                                                        </Button>
+                                                    </div>
+                                                </form>
+                                            </Form>
+                                        )}
+
+                                        {passwordStep === 'change-password' && (
+                                            <Form {...changePasswordForm}>
+                                                <form onSubmit={changePasswordForm.handleSubmit((data) => {
+                                                    changePasswordMutation.mutate(data);
+                                                })} className="space-y-4">
+                                                    <FormField
+                                                        control={changePasswordForm.control}
+                                                        name="oldPassword"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-headline">Old Password</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="password"
+                                                                        placeholder="Enter your old password"
+                                                                        className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage className="text-button"/>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <FormField
+                                                        control={changePasswordForm.control}
+                                                        name="newPassword"
+                                                        render={({ field }) => (
+                                                            <FormItem>
+                                                                <FormLabel className="text-headline">New Password</FormLabel>
+                                                                <FormControl>
+                                                                    <Input
+                                                                        type="password"
+                                                                        placeholder="Enter your new password"
+                                                                        className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
+                                                                        {...field}
+                                                                    />
+                                                                </FormControl>
+                                                                <FormMessage className="text-button"/>
+                                                            </FormItem>
+                                                        )}
+                                                    />
+                                                    <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                        Change Password
+                                                    </Button>
+                                                </form>
+                                            </Form>
                                         )}
                                     </div>
                                 </SheetContent>

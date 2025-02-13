@@ -2,7 +2,7 @@ import express from "express";
 import {finishSignup, signup, verifyEmail} from "../controllers/signupControllers.js";
 import {login, logout} from "../controllers/loginControllers.js";
 import {
-    changeEmailProtection, changeEmailProtectionPlus,
+    changeEmailProtection, changeEmailProtectionPlus, changePasswordProtection,
     forgetPasswordProtection,
     isAuthenticated,
     temporarySessionProtection
@@ -19,7 +19,12 @@ import {
     requestEmailChange,
     verifyCodeForEmailChange,
     deleteAccount,
-    getUserData, startVerifyingNewEmail, verifyNewEmail,
+    getUserData,
+    startVerifyingNewEmail,
+    verifyNewEmail,
+    requestPasswordChange,
+    verifyCodeForPasswordChange,
+    changePassword,
 } from "../controllers/userController.js";
 import {
     checkAuth, checkForForgotPasswordSession,
@@ -55,6 +60,11 @@ authRoutes.post("/change-email/code", isAuthenticated, verifyCodeForEmailChange)
 authRoutes.post("/change-email/new", isAuthenticated, changeEmailProtection, startVerifyingNewEmail)
 authRoutes.post("/change-email/new/verify", isAuthenticated, changeEmailProtection, verifyNewEmail);
 authRoutes.post("/change-email/finish", isAuthenticated, changeEmailProtection, changeEmailProtectionPlus, changeEmail)
+
+// This route will be used to change user password
+authRoutes.post("/change-password", isAuthenticated, requestPasswordChange);
+authRoutes.post("/change-password/code", isAuthenticated, verifyCodeForPasswordChange)
+authRoutes.post("/change-password/finish", isAuthenticated, changePasswordProtection, changePassword)
 
 
 
