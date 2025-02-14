@@ -15,7 +15,7 @@ import {createCookieWithEmail,deleteCookieWithEmail,} from "../utils/cookies.js"
 import {createToken, deleteToken} from "../libs/jwt-sessions.js";
 import {usernameAvailable, validateUsername} from "../utils/username.js";
 import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
-import {createUser} from "../utils/user.js";
+import {createRecoveryCodes, createUser, getRecoveryCodes} from "../utils/user.js";
 
 
 // Start of sign up(Optimization was done kind of)
@@ -195,12 +195,17 @@ export const finishSignup = async (req: Request, res: Response):Promise<void> =>
     // Now we can create user
     await createUser(encryptedEmail, hashedPassword, username);
 
+    // Create recovery codes
+    await createRecoveryCodes(encryptedEmail);
+
+    // Get recovery codes
+    const recoveryCodes = await getRecoveryCodes(encryptedEmail);
+
     // We delete the temporary session in redis
     await deleteTemporarySession(email);
 
     // We get rid of the cookie
     deleteToken(res);
 
-    res.status(200).json({ message: 'User created' });
+    res.status(200).json({ message: 'Account created successfully', recoveryCodes });
 }
-

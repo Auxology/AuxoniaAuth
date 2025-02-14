@@ -191,3 +191,10 @@ export const resetPassword = async(req: Request, res: Response):Promise<void> =>
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
+
+// TODO: Add a function to recovery account completely if user loses access to email
+// This can be done by verifying the user's identity through other means
+// They will be asked to enter their previous password and email
+// Alongside recovery code. If all of these match, user can reset their email
+// They will also need to have have recovery session to do this
+

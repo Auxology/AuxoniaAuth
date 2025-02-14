@@ -5,6 +5,8 @@ import {db} from "../db/index.js";
 import {sessions, users} from "../db/schema.js";
 import { eq } from "drizzle-orm";
 import {correctPassword} from "./password.js";
+import {array} from "zod";
+import {randomBytes} from "node:crypto";
 
 // This is function used to create user
 export const createUser = async (email: string, password: string, username:string): Promise<void> => {
@@ -218,5 +220,40 @@ export const updateUserPassword = async (userId:string, password:string, oldPass
     catch(err){
         console.error('Failed to update user password', err);
         throw err; // Re-throw the error to handle it in the calling function
+    }
+}
+
+export const createRecoveryCodes = async (email:string,):Promise<void> => {
+    // Create array which will store 3 recovery codes
+    const recoveryCode = Array.from({length: 3}, () => randomBytes(16).toString('hex'));
+
+    try{
+        await db.update(users).set({
+            recoveryCodes: recoveryCode
+        })
+        .where(eq(users.email, email))
+    }
+    catch(err){
+        console.error('Failed to create recovery code', err);
+    }
+}
+
+// Only show user recovery codes once
+export const getRecoveryCodes = async (email:string):Promise<string[] | null> => {
+    try{
+        const [row] = await db.select({
+            recoveryCodes: users.recoveryCodes
+        })
+        .from(users)
+        .where(eq(users.email, email))
+        .limit(1)
+
+        if(!row || !row.recoveryCodes) return null;
+
+        return row.recoveryCodes;
+    }
+    catch(err){
+        console.error('Failed to show recovery codes', err);
+        return null;
     }
 }
