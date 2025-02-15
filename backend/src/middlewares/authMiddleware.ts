@@ -1,6 +1,7 @@
 import type{ Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import {
+    verifyAccountRecoverySession, verifyAccountRecoverySessionForVerifiedEmail,
     verifyChangeEmailSession, verifyChangeEmailSessionWithNewEmail, verifyChangePasswordSession,
     verifyForgotPasswordSession,
     verifyTemporarySession
@@ -164,6 +165,64 @@ export const changePasswordProtection = async (req: Request, res: Response, next
             res.status(401).json({message: "Unauthorized - Token Expired"});
             return;
         }
+
+        next();
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
+export const accountRecoveryProtection = async (req: Request, res: Response, next: Function):Promise<void> => {
+    try{
+        const token = req.cookies['account-recovery'];
+
+        if(!token) {
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_KEY!) as JwtPayloadWithEmail;
+
+        // Verify
+        const verify = await verifyAccountRecoverySession(decoded.userId);
+
+        if(!verify) {
+            res.status(401).json({message: "Unauthorized - Token Expired"});
+            return;
+        }
+
+        req.userId = decoded.userId;
+
+        next();
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}
+
+export const accountRecoveryFinishProtection = async (req: Request, res: Response, next: Function):Promise<void> => {
+    try {
+        const token = req.cookies['account-recovery-finish'];
+
+        if(!token) {
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_KEY!) as JwtPayloadWithEmail;
+
+        // Verify
+        const verify = await verifyAccountRecoverySessionForVerifiedEmail(decoded.userId);
+
+        if(!verify) {
+            res.status(401).json({message: "Unauthorized - Token Expired"});
+            return;
+        }
+
+        req.userId = decoded.userId;
 
         next();
     }

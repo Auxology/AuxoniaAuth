@@ -127,3 +127,51 @@ export const createTokenForChangePassword = (userId:string, sessionToken:string,
 export const deleteTokenForChangePassword = (res:Response):void => {
     res.clearCookie('change-password');
 }
+
+export const createTokenForAccountRecovery = (userId:string, sessionToken:string, res:Response):string => {
+    const payload = {
+        userId,
+        sessionToken
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_KEY!, {
+        expiresIn: '15m' // 15 minutes
+    });
+
+    res.cookie("account-recovery", token, {
+        maxAge: 1000 * 60 * 15, // 15 minutes
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    })
+
+    return token;
+}
+
+export const deleteTokenForAccountRecovery = (res:Response):void => {
+    res.clearCookie('account-recovery');
+}
+
+export const createTokenForAccountRecoveryFinish = (userId:string, sessionToken:string, res:Response):string => {
+    const payload = {
+        userId,
+        sessionToken
+    }
+
+    const token = jwt.sign(payload, process.env.JWT_KEY!, {
+        expiresIn: '15m' // 15 minutes
+    });
+
+    res.cookie("account-recovery-finish", token, {
+        maxAge: 1000 * 60 * 15, // 15 minutes
+        httpOnly: true,
+        secure: true,
+        sameSite: "none"
+    })
+
+    return token;
+}
+
+export const deleteTokenForAccountRecoveryFinish = (res:Response):void => {
+    res.clearCookie('account-recovery-finish');
+}

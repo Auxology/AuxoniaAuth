@@ -570,6 +570,147 @@ export const deleteChangePasswordSession = async (userId: string):Promise<void> 
     }
 }
 
+export const createAccountRecoverySession = async (userId: string):Promise<string | null> => {
+    try {
+        const sessionToken = crypto.randomUUID();
+        const expiryDate = 60 * 15;  // 15 minutes
+
+        const accountRecoveryData = {
+            sessionToken,
+            userId,
+            expiryDate
+        }
+
+        await redis.setEx(`account_recovery_session:${userId}`, expiryDate, JSON.stringify(accountRecoveryData));
+
+        console.log(`Account recovery session created for ${userId}`);
+
+        return sessionToken;
+    }
+    catch(err){
+        console.error('Failed to create account recovery session', err);
+        return null;
+    }
+}
+
+export const verifyAccountRecoverySession = async (userId: string):Promise<boolean> => {
+    try {
+        const accountRecoverySession = await redis.get(`account_recovery_session:${userId}`);
+
+        if(!accountRecoverySession){
+            console.error('Account recovery session not found');
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify account recovery session', err);
+        return false;
+    }
+}
+
+export const deleteAccountRecoverySession = async (userId: string):Promise<void> => {
+    try {
+        await redis.del(`account_recovery_session:${userId}`);
+    }
+    catch(err){
+        console.error('Failed to delete account recovery session', err);
+    }
+}
+
+export const accountRecoveryStoreNewEmailCode = async (userId: string):Promise<void> => {
+    const code = crypto.randomBytes(3).toString('hex');
+    const expiryDate = 60 * 15;  // 15 minutes
+
+    try {
+        await redis.setEx(`account_recovery_new_email_code:${userId}`, expiryDate, code);
+        // In production, we should send this code to the user's email
+        console.log(`Account recovery new email code ${code} created for ${userId}`);
+    }
+    catch(err){
+        console.error('Failed to store account recovery new email code', err);
+    }
+}
+
+export const accountRecoveryVerifyNewEmailCode = async (userId: string, code: string):Promise<boolean> => {
+    try {
+        const getCode = await redis.get(`account_recovery_new_email_code:${userId}`);
+
+        if(!getCode){
+            return false;
+        }
+
+        if(getCode !== code){
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify account recovery new email code', err);
+        return false;
+    }
+}
+
+export const accountRecoveryDeleteNewEmailCode = async (userId: string):Promise<void> => {
+    try {
+        await redis.del(`account_recovery_new_email_code:${userId}`);
+    }
+    catch(err){
+        console.error('Failed to delete account recovery new email code', err);
+    }
+}
+
+export const createAccountRecoverySessionForVerifiedEmail = async (userId: string):Promise<string | null> => {
+    try {
+        const sessionToken = crypto.randomUUID();
+        const expiryDate = 60 * 15;  // 15 minutes
+
+        const accountRecoveryData = {
+            sessionToken,
+            userId,
+            expiryDate
+        }
+
+        await redis.setEx(`account_recovery_session_verified_email:${userId}`, expiryDate, JSON.stringify(accountRecoveryData));
+
+        console.log(`Account recovery session for verified email created for ${userId}`);
+
+        return sessionToken;
+    }
+    catch(err){
+        console.error('Failed to create account recovery session for verified email', err);
+        return null;
+    }
+}
+
+export const verifyAccountRecoverySessionForVerifiedEmail = async (userId: string):Promise<boolean> => {
+    try {
+        const accountRecoverySession = await redis.get(`account_recovery_session_verified_email:${userId}`);
+
+        if(!accountRecoverySession){
+            console.error('Account recovery session for verified email not found');
+            return false;
+        }
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to verify account recovery session for verified email', err);
+        return false;
+    }
+}
+
+export const deleteAccountRecoverySessionForVerifiedEmail = async (userId: string):Promise<void> => {
+    try {
+        await redis.del(`account_recovery_session_verified_email:${userId}`);
+    }
+    catch(err){
+        console.error('Failed to delete account recovery session for verified email', err);
+    }
+}
+
 // Lock functions
 // You might wonder why do I create lock for resending email verification code inside redis?
 // The reason is that if we don't create lock, the user can spam the resending email verification code endpoint,and we don't want that.
@@ -671,6 +812,29 @@ export const checkIfResendingChangeEmailCodeWithNewEmailIsLocked = async (userId
     }
     catch(err){
         console.error('Failed to check if resending change email code with new email is locked', err);
+        return true;
+    }
+}
+
+export const lockChangePasswordCode = async (userId: string):Promise<void> => {
+    try {
+        await redis.setEx(`locked_change_password_code:${userId}`, 60, 'locked');
+    }
+    catch(err){
+        console.error('Failed to lock change password code', err);
+    }
+}
+
+export const checkIfChangePasswordCodeIsLocked = async (userId: string):Promise<boolean> => {
+    try {
+        const isLocked = await redis.exists(`locked_change_password_code:${userId}`);
+
+        if(!isLocked) return false;
+
+        return true;
+    }
+    catch(err){
+        console.error('Failed to check if change password code is locked', err);
         return true;
     }
 }

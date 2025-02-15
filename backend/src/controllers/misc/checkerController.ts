@@ -1,5 +1,5 @@
 import type {Request, Response} from "express";
-import {getUser} from "../utils/user.js";
+import {getUser} from "../../utils/user.js";
 
 // This function will check if user has cookie with email
 // If user has cookie with email, it means that they have started the process of verifying their email

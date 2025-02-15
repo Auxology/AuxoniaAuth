@@ -136,6 +136,7 @@ export default function DashboardPage() {
                 title: "Success",
                 description: "Email changed successfully",
             })
+            window.location.reload();
         },
         onError() {
             toast({

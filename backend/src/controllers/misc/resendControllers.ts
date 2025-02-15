@@ -10,7 +10,7 @@ import {
     checkIfResendingForgotPasswordCodeIsLocked,
     createForgotPasswordCode,
     lockResendingForgotPasswordCode
-} from "../libs/redis.js";
+} from "../../libs/redis.js";
 
 export const resendEmailVerificationCode = async (req: Request, res: Response):Promise<void> => {
     try{

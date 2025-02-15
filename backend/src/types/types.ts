@@ -20,6 +20,7 @@ declare global {
         interface Request {
             email: string;
             forgot_password_email: string;
+            userId: string;
         }
     }
 }

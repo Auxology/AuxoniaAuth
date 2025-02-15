@@ -3,10 +3,9 @@ import type{User} from "../types/types.js";
 import {decrypt} from "./encrypt.js";
 import {db} from "../db/index.js";
 import {sessions, users} from "../db/schema.js";
-import { eq } from "drizzle-orm";
-import {correctPassword} from "./password.js";
-import {array} from "zod";
-import {randomBytes} from "node:crypto";
+import { arrayContains, eq } from "drizzle-orm";
+import {correctPassword, hashPassword} from "./password.js";
+import {generateRecoveryCodes, hashRecoveryCode, verifyRecoveryCode} from "./codes.js";
 
 // This is function used to create user
 export const createUser = async (email: string, password: string, username:string): Promise<void> => {
@@ -151,15 +150,30 @@ export const getEmailFromUserId = async (userId:string):Promise<string | null> =
     }
 }
 
-export const changeUserEmail = async (userId:string, email:string, oldEmail:string):Promise<void> => {
+export const changeUserEmail = async (userId:string, email:string):Promise<void> => {
     try{
-        await db.update(users).set({
-            email: email,
-            previousEmails: [oldEmail]
+        const [row] = await db.select({
+            previousEmails: users.previousEmails
         })
+        .from(users)
         .where(eq(users.id, userId))
+        .limit(1);
 
-        await db.delete(sessions).where(eq(sessions.userId, userId))
+        if (!row) throw new Error('User not found');
+
+        // Push new email to previous emails array
+        const updatedPreviousEmails = [...(row.previousEmails || []), email];
+
+        // Update the user's email and previous emails
+        await db.update(users)
+            .set({
+                email: email,
+                previousEmails: updatedPreviousEmails
+            })
+            .where(eq(users.id, userId));
+
+        // Delete all sessions for this user
+        await db.delete(sessions).where(eq(sessions.userId, userId));
     }
     catch(err){
         console.error('Failed to change email', err);
@@ -223,18 +237,25 @@ export const updateUserPassword = async (userId:string, password:string, oldPass
     }
 }
 
-export const createRecoveryCodes = async (email:string,):Promise<void> => {
-    // Create array which will store 3 recovery codes
-    const recoveryCode = Array.from({length: 3}, () => randomBytes(16).toString('hex'));
-
+export const createRecoveryCodes = async (email:string,):Promise<string[] | null> => {
     try{
+        // Create array which will store 3 recovery codes
+        const recoveryCodes = generateRecoveryCodes();
+
+        // Hash recovery codes
+        const hashedRecoveryCodes = await Promise.all(recoveryCodes.map(code => hashRecoveryCode(code)));
+
         await db.update(users).set({
-            recoveryCodes: recoveryCode
+            recoveryCodes: hashedRecoveryCodes
         })
         .where(eq(users.email, email))
+
+        return recoveryCodes;
     }
+
     catch(err){
         console.error('Failed to create recovery code', err);
+        return null;
     }
 }
 
@@ -255,5 +276,76 @@ export const getRecoveryCodes = async (email:string):Promise<string[] | null> =>
     catch(err){
         console.error('Failed to show recovery codes', err);
         return null;
+    }
+}
+
+// Those functions will be searched by recovery code
+// This will check if the email given by user has been linked to the recovery code previously
+export const checkEmailByRecoveryCode = async (recoveryCode: string, email: string): Promise<string | null> => {
+    try {
+        // First, let's select both recoveryCodes and previousEmails to debug
+        const [row] = await db.select({
+            recoveryCodes: users.recoveryCodes,
+            previousEmails: users.previousEmails,
+            id: users.id
+        })
+        .from(users)
+        .where(arrayContains(users.previousEmails, [email]))
+        .limit(1);
+
+
+        if (!row) {
+            return null;
+        }
+
+        if (!row.recoveryCodes) {
+            return null;
+        }
+
+        // Compare recovery code with hashed recovery codes
+        for (const code of row.recoveryCodes) {
+            const isMatch = await verifyRecoveryCode(recoveryCode, code);
+            if (isMatch) return row.id;
+        }
+
+        return null;
+    } catch (err) {
+        console.error('Failed to check email by recovery code:', err);
+        return null;
+    }
+}
+
+
+export const accountRecover = async(userId:string, email:string, password:string):Promise<void> => {
+    try{
+        // Get arrays of old emails and passwords
+        const oldPasswords = await db.select({
+            previousPasswords: users.previousPasswords,
+        }).from(users).where(eq(users.id, userId));
+
+        const oldEmails = await db.select({
+            previousEmails: users.previousEmails,
+        }).from(users).where(eq(users.id, userId));
+
+    
+        // Add new email and password to the arrays
+        const updatedPreviousPasswords = [...(oldPasswords[0]?.previousPasswords || []), password];
+        const updatedPreviousEmails = [...(oldEmails[0]?.previousEmails || []), email];
+
+        // Update the user's email, password, previous emails, and previous passwords
+        await db.update(users)
+            .set({
+                email: email,
+                password: password,
+                previousEmails: updatedPreviousEmails,
+                previousPasswords: updatedPreviousPasswords,
+            })
+            .where(eq(users.id, userId));
+
+        // Delete all sessions for this user
+        await db.delete(sessions).where(eq(sessions.userId, userId));
+    }
+    catch(err){
+        console.error('Failed to recover account', err);
     }
 }

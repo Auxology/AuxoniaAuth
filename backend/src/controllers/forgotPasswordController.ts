@@ -1,24 +1,15 @@
-// Function related to forget password, it is ideal to use sessions for this
-// These temporary sessions are similar to the ones used in the signup process
-import type { Request, Response } from "express";
-import { validateEmail } from "../utils/email.js";
+import type {Request, Response} from "express";
+import {encrypt} from "../utils/encrypt.js";
 import {compareUserPasswords, getUserFromEmail, resetUserPassword} from "../utils/user.js";
 import {
     checkIfResendingForgotPasswordCodeIsLocked,
-    createForgotPasswordCode, createForgotPasswordSession,
-    deleteForgotPasswordCode,
-    lockResendingForgotPasswordCode, verifyForgotPasswordCode,
-    deleteForgotPasswordSession
+    createForgotPasswordCode, createForgotPasswordSession, deleteForgotPasswordCode, deleteForgotPasswordSession,
+    lockResendingForgotPasswordCode, verifyForgotPasswordCode
 } from "../libs/redis.js";
-import { encrypt } from "../utils/encrypt.js";
-import {
-    createCookieWithEmailForForgotPassword, deleteCookieWithEmailForForgotPassword
-} from "../utils/cookies.js";
-import {
-    createTokenForResetPassword,
-    deleteTokenForResetPassword
-} from "../libs/jwt-sessions.js";
-import {amIPwned, passwordIsValid, hashPassword} from "../utils/password.js";
+import {createCookieWithEmailForForgotPassword, deleteCookieWithEmailForForgotPassword} from "../utils/cookies.js";
+import {validateEmail} from "../utils/email.js";
+import {createTokenForResetPassword, deleteTokenForResetPassword} from "../libs/jwt-sessions.js";
+import {amIPwned, hashPassword, passwordIsValid} from "../utils/password.js";
 
 export const forgotPassword = async(req: Request, res: Response):Promise<void> => {
     try{
@@ -191,10 +182,3 @@ export const resetPassword = async(req: Request, res: Response):Promise<void> =>
         res.status(500).json({ error: 'Internal Server Error' });
     }
 }
-
-// TODO: Add a function to recovery account completely if user loses access to email
-// This can be done by verifying the user's identity through other means
-// They will be asked to enter their previous password and email
-// Alongside recovery code. If all of these match, user can reset their email
-// They will also need to have have recovery session to do this
-
