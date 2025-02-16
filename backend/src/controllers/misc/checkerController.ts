@@ -97,3 +97,20 @@ export const checkForForgotPasswordSession = async (req: Request, res: Response)
         res.status(500).json({message: "Internal Server Error"});
     }
 }
+
+export const checkForAccountRecovery = async (req: Request, res: Response):Promise<void> => {
+    try{
+        const userId = req.userId;
+
+        if(!userId){
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
+        }
+
+        res.status(200).json({userId: userId});
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}

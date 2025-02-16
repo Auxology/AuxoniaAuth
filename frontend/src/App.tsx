@@ -4,6 +4,7 @@ import StartSignUpPage from "@/pages/signUp/startSignUpPage.tsx";
 import VerifyEmailPage from "@/pages/signUp/verifyEmailPage.tsx";
 import FinishSignUpPage from "@/pages/signUp/finishSignUpPage.tsx";
 import {
+    AccountRecoveryProtection,
     ForgetPasswordProtection,
     ForgotPasswordCookie,
     PublicRoute,
@@ -16,6 +17,9 @@ import {PrivateRoute} from "@/components/PrivateRoute.tsx";
 import ForgetPasswordPage from "@/pages/forgetPassword/beginPasswordRecoveryPage.tsx";
 import PasswordRecoveryCodePage from "@/pages/forgetPassword/passwordRecoveryCodePage.tsx";
 import ResetPasswordPage from "@/pages/forgetPassword/resetPasswordPage.tsx";
+import StartRecoveryPage from "@/pages/recover/startRecovery.tsx";
+import NewEmailPage from "@/pages/recover/newEmail.tsx";
+import NewEmailVerifyPage from "@/pages/recover/newEmailVerify.tsx";
 
 const queryClient = new QueryClient()
 
@@ -99,12 +103,41 @@ export default function App() {
                         </PublicRoute>
                     }/>
 
+                    <Route path="/recovery" element={
+                        <PublicRoute>
+                            <TemporaryPublicRoute>
+                                <StartRecoveryPage/>
+                            </TemporaryPublicRoute>
+                        </PublicRoute>
+                    }/>
+
+                    <Route path="/recovery/new-email" element={
+                        <PublicRoute>
+                            <TemporaryPublicRoute>
+                                <AccountRecoveryProtection>
+                                    <NewEmailPage />
+                                </AccountRecoveryProtection>
+                            </TemporaryPublicRoute>
+                        </PublicRoute>
+                    }/>
+
+                    <Route path="/recovery/new-email/code" element={
+                        <PublicRoute>
+                            <TemporaryPublicRoute>
+                                <AccountRecoveryProtection>
+                                    <NewEmailVerifyPage />
+                                </AccountRecoveryProtection>
+                            </TemporaryPublicRoute>
+                        </PublicRoute>
+                    }/>
+
 
                     <Route path="/dashboard" element={
                         <PrivateRoute>
                             <DashboardPage />
                         </PrivateRoute>
                     }/>
+
 
                     <Route path="*" element={<h1>404</h1>} />
 

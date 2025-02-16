@@ -16,7 +16,7 @@ import {
 } from "../controllers/recoverControllers.js";
 import {ipLimit} from "../libs/rate-limits.js";
 import {
-    resendEmailChangeCode,
+    resendEmailChangeCode, resendEmailCodeForRecovery,
     resendEmailVerificationCode,
     resendForgotPasswordCode
 } from "../controllers/misc/resendControllers.js";
@@ -25,7 +25,7 @@ import {
     getUserData,
 } from "../controllers/userController.js";
 import {
-    checkAuth, checkForForgotPasswordSession,
+    checkAuth, checkForAccountRecovery, checkForForgotPasswordSession,
     checkForgotPasswordCookie,
     checkForTemporarySession,
     checkVerifyEmailCookie
@@ -80,6 +80,7 @@ authRoutes.post("/change-password/finish", isAuthenticated, changePasswordProtec
 // This route will be used to recover account
 authRoutes.post("/account-recovery", beginAccountRecovery);
 authRoutes.post("/account-recovery/new-email", accountRecoveryProtection, accountRecoveryNewEmail);
+authRoutes.post("/account-recovery/resend-code", accountRecoveryProtection, resendEmailCodeForRecovery);
 authRoutes.post("/account-recovery/new-email/code", accountRecoveryProtection, accountRecoveryNewEmailVerify);
 authRoutes.post("/account-recovery/finish", accountRecoveryFinishProtection, recoverAccount);
 
@@ -90,3 +91,4 @@ authRoutes.get("/verify-email/check", checkVerifyEmailCookie);
 authRoutes.get("/forgot-password/check", checkForgotPasswordCookie);
 authRoutes.get("/reset-password/check", forgetPasswordProtection ,checkForForgotPasswordSession);
 authRoutes.get("/temporary-session", temporarySessionProtection, checkForTemporarySession);
+authRoutes.get("/account-recovery/check", accountRecoveryProtection, checkForAccountRecovery);

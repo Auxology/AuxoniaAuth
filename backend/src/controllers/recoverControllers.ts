@@ -10,7 +10,9 @@ import {
     accountRecoveryStoreNewEmailCode,
     accountRecoveryVerifyNewEmailCode,
     accountRecoveryDeleteNewEmailCode,
-    createAccountRecoverySessionForVerifiedEmail, deleteAccountRecoverySessionForVerifiedEmail
+    createAccountRecoverySessionForVerifiedEmail,
+    deleteAccountRecoverySessionForVerifiedEmail,
+    checkIfSendingCodeForRecoveryIsLocked, lockSendingCodeForRecovery
 } from "../libs/redis.js";
 import { encrypt } from "../utils/encrypt.js";
 import {createNewEmailCookie} from "../utils/cookies.js";
@@ -77,6 +79,14 @@ export const accountRecoveryNewEmail = async(req: Request, res: Response):Promis
             res.status(401).json({ error: 'Unauthorized' });
         }
 
+        // Check if user is locked
+        const isLocked = await checkIfSendingCodeForRecoveryIsLocked(userId);
+
+        if(isLocked) {
+            res.status(429).json({ error: 'Too many requests' });
+            return;
+        }
+
         const isValid = validateEmail(email);
 
         if(!isValid) {
@@ -99,6 +109,9 @@ export const accountRecoveryNewEmail = async(req: Request, res: Response):Promis
 
         // Create cookie with new email
         await createNewEmailCookie(email, res);
+
+        // Lock user
+        await lockSendingCodeForRecovery(userId);
 
         res.status(200).json({ message: 'New email code sent' });
     }

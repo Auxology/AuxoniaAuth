@@ -6,6 +6,7 @@ import {useForgotPasswordCookie, useVerifyEmailCookie} from "@/hooks/useEmailCoo
 import { Navigate, useLocation } from "react-router-dom";
 import {useTemporarySession} from "@/hooks/useTemporarySession.ts";
 import {useForgotPasswordSession} from "@/hooks/useForgotPasswordSession.ts";
+import {useRecoveryToken} from "@/hooks/useRecoveryToken.ts";
 
 // This route is for public pages like login, signup, forgot password, etc
 // If user is logged in, it will redirect to /dashboard
@@ -88,6 +89,20 @@ export function ForgetPasswordProtection({ children }: { children: React.ReactNo
 
     if(!user) {
         return <Navigate to="/forgot-password" />
+    }
+
+    return <>{children}</>
+}
+
+export function AccountRecoveryProtection({ children }: { children: React.ReactNode }) {
+    const {data: user, isLoading} = useRecoveryToken();
+
+    if(isLoading) {
+        return <div className="bg-background min-h-screen flex justify-center items-center">Loading...</div>
+    }
+
+    if(!user) {
+        return <Navigate to="/recovery" />
     }
 
     return <>{children}</>

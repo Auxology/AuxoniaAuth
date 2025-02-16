@@ -9,7 +9,10 @@ import {
     lockResendingEmailVerificationCode,
     checkIfResendingForgotPasswordCodeIsLocked,
     createForgotPasswordCode,
-    lockResendingForgotPasswordCode
+    lockResendingForgotPasswordCode,
+    checkIfSendingCodeForRecoveryIsLocked,
+    accountRecoveryStoreNewEmailCode,
+    lockSendingCodeForRecovery
 } from "../../libs/redis.js";
 
 export const resendEmailVerificationCode = async (req: Request, res: Response):Promise<void> => {
@@ -97,6 +100,36 @@ export const resendEmailChangeCode = async (req: Request, res: Response):Promise
         await lockResendingChangeEmailCode(userId);
 
         res.status(200).json({message: "Change email code resent"});
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal server error"});
+    }
+}
+
+export const resendEmailCodeForRecovery = async (req: Request, res: Response):Promise<void> => {
+    try{
+        const userId = req.userId;
+
+        if(!userId) {
+            res.status(401).json({message: "Unauthorized"});
+            return;
+        }
+
+        // First check if resending code for recovery is locked
+        const isLocked = await checkIfSendingCodeForRecoveryIsLocked(userId);
+
+        if(isLocked){
+            res.status(429).json({message: "Resending code for recovery is locked"});
+            return;
+        }
+
+        await accountRecoveryStoreNewEmailCode(userId);
+
+        // Create new lock
+        await lockSendingCodeForRecovery(userId);
+
+        res.status(200).json({message: "Code for recovery resent"});
     }
     catch (err) {
         console.error(err);
