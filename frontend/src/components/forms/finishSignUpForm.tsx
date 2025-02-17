@@ -4,6 +4,8 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, For
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { FinishSignUpFormData, finishSignUpSchema } from "@/lib/schemas"
+import { useState } from "react"
+import { CheckIcon, XIcon } from "lucide-react"
 
 interface FinishSignUpFormProps {
     onSubmit: (data: FinishSignUpFormData) => void
@@ -17,6 +19,16 @@ export function FinishSignUpForm({ onSubmit }: FinishSignUpFormProps) {
             password: ""
         }
     })
+
+    const [password, setPassword] = useState("")
+
+    const passwordRequirements = [
+        { regex: /.{8,}/, label: "At least 8 characters" },
+        { regex: /[A-Z]/, label: "One uppercase letter" },
+        { regex: /[a-z]/, label: "One lowercase letter" },
+        { regex: /[0-9]/, label: "One number" },
+        { regex: /[\W_]/, label: "One special character" },
+    ]
 
     return (
         <Form {...form}>
@@ -54,11 +66,33 @@ export function FinishSignUpForm({ onSubmit }: FinishSignUpFormProps) {
                                     placeholder="********"
                                     className="border-paragraph/20 text-headline bg-background/50 placeholder:text-paragraph/50"
                                     {...field}
+                                    onChange={(e) => {
+                                        setPassword(e.target.value)
+                                        field.onChange(e)
+                                    }}
                                 />
                             </FormControl>
-                            <FormDescription className="text-paragraph">
-                                Password must be at least 8 characters long.
-                            </FormDescription>
+                            <div className="space-y-2">
+                                {passwordRequirements.map((requirement, index) => (
+                                    <div 
+                                        key={index} 
+                                        className="flex items-center gap-2 text-sm"
+                                    >
+                                        {requirement.regex.test(password) ? (
+                                            <CheckIcon className="w-4 h-4 text-green-500" />
+                                        ) : (
+                                            <XIcon className="w-4 h-4 text-button" />
+                                        )}
+                                        <span className={`${
+                                            requirement.regex.test(password) 
+                                                ? "text-green-500" 
+                                                : "text-paragraph"
+                                        }`}>
+                                            {requirement.label}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
                             <FormMessage className="text-button"/>
                         </FormItem>
                     )}

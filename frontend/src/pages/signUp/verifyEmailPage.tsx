@@ -6,9 +6,12 @@ import { axiosInstance } from "@/lib/axios"
 import { AxiosError } from "axios"
 import { OTPForm } from "@/components/forms/otpForm"
 import type { VerifyEmailFormData } from "@/lib/schemas"
+import { useState } from "react"
 
 export default function VerifyEmailPage() {
     const navigate = useNavigate()
+    const [isResendDisabled, setIsResendDisabled] = useState(false)
+    const [timer, setTimer] = useState(0)
 
     const verifyMutation = useMutation({
         mutationFn: async (data: VerifyEmailFormData) => {
@@ -17,15 +20,15 @@ export default function VerifyEmailPage() {
         },
         onSuccess: () => {
             toast({
-                title: "Success",
-                description: "Email verified successfully.",
+                title: "Email verified",
+                description: "Your email has been successfully verified.",
             })
-            navigate("/signup/finish")
+            setTimeout(() => navigate("/signup/finish"), 0)
         },
         onError: (error: AxiosError) => {
             toast({
-                title: "Error",
-                description: error.response?.statusText === "Conflict" ? "Invalid Code" : "An error occurred.",
+                title: "Verification failed",
+                description: error.response?.status === 409 ? "Invalid verification code" : "Unable to verify email",
                 variant: "destructive"
             })
         }
@@ -38,14 +41,17 @@ export default function VerifyEmailPage() {
         },
         onSuccess: () => {
             toast({
-                title: "Success",
-                description: "Email verification code sent successfully.",
+                title: "Code resent",
+                description: "A new verification code has been sent to your email.",
             })
+            setIsResendDisabled(true)
+            setTimer(60)
         },
-        onError: () => {
+        onError: (error: AxiosError) => {
             toast({
-                title: "Please retry in 1 minutes",
-                description: "Failed to send email verification code.",
+                title: "Resend failed",
+                description: error.response?.status === 429 ? "Please wait before requesting a new code" : "Unable to send new code",
+                variant: "destructive"
             })
         }
     })
@@ -55,17 +61,20 @@ export default function VerifyEmailPage() {
             <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
                 <CardHeader className="text-center gap-2">
                     <CardTitle className="text-headline text-2xl font-bold">
-                        Sign Up
+                        Verify Email
                     </CardTitle>
                     <CardDescription className="text-paragraph">
-                        Enter code to verify email.
+                        Enter the verification code sent to your email.
                     </CardDescription>
                 </CardHeader>
 
                 <CardContent>
                     <OTPForm 
                         onSubmit={(values) => verifyMutation.mutate(values)}
-                        onResend={() => resendMutation.mutate()}
+                        onResend={() => !isResendDisabled && resendMutation.mutate()}
+                        isLoading={verifyMutation.isPending || resendMutation.isPending}
+                        disableResend={isResendDisabled}
+                        timer={timer}
                     />
                 </CardContent>
             </Card>

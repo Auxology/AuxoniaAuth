@@ -57,7 +57,7 @@ export default function StartRecoveryPage() {
 
     return (
         <div className="bg-background min-h-screen flex justify-center items-center text-headline">
-            <Card className="w-[40vh] space-y-2 border-paragraph/20 bg-background/50 backdrop-blur-sm">
+            <Card className="w-[50vh] space-y-2 flex flex-col justify-center items-center border-paragraph/20 bg-background/50 backdrop-blur-sm">
                 <CardHeader className="text-center gap-2">
                     <CardTitle className="text-headline text-2xl font-bold">
                         Account Recovery
@@ -121,6 +121,14 @@ export default function StartRecoveryPage() {
                                 disabled={mutation.isPending}
                             >
                                 Recover Account
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="w-full text-paragraph hover:text-headline hover:bg-background/20 transition-colors"
+                                onClick={() => navigate("/login")}
+                            >
+                                Back to Login
                             </Button>
                         </form>
                     </Form>

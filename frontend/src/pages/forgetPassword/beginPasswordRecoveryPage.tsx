@@ -17,16 +17,16 @@ export default function ForgotPasswordPage() {
         },
         onSuccess: () => {
             toast({
-                title: "Success",
-                description: "Password reset code sent to email.",
+                title: "Reset initiated",
+                description: "Check your email for the password reset code.",
             })
             setTimeout(() => navigate("/forgot-password/code"), 0)
         },
         onError: (error: AxiosError) => {
             toast({
-                title: "Error",
-                description: error.response?.statusText || "An error occurred",
-                variant: "destructive",
+                title: "Reset failed",
+                description: error.response?.status === 404 ? "Email not found" : "Unable to initiate password reset",
+                variant: "destructive"
             })
         }
     })

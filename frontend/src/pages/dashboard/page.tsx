@@ -2,7 +2,7 @@ import LogoutButton from '@/components/ui/LogoutButton.tsx';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,11 +13,42 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp
 import {useMutation} from "@tanstack/react-query";
 import {toast} from "@/hooks/use-toast.ts";
 import {axiosInstance} from "@/lib/axios.ts";
+import { AxiosError } from 'axios';
 
 export default function DashboardPage() {
     const { data, isLoading, error } = useAuth();
     const [step, setStep] = useState<'old-email' | 'verify-old' | 'new-email' | 'verify-new' | 'confirm'>('old-email');
     const [passwordStep, setPasswordStep] = useState<'verify-email' | 'change-password'>('verify-email');
+    const [passwordCodeTimeout, setPasswordCodeTimeout] = useState(0);
+    const [oldEmailCodeTimeout, setOldEmailCodeTimeout] = useState(0);
+    const [newEmailCodeTimeout, setNewEmailCodeTimeout] = useState(0);
+
+    useEffect(() => {
+        if (passwordCodeTimeout > 0) {
+            const timer = setTimeout(() => {
+                setPasswordCodeTimeout(passwordCodeTimeout - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [passwordCodeTimeout]);
+
+    useEffect(() => {
+        if (oldEmailCodeTimeout > 0) {
+            const timer = setTimeout(() => {
+                setOldEmailCodeTimeout(oldEmailCodeTimeout - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [oldEmailCodeTimeout]);
+
+    useEffect(() => {
+        if (newEmailCodeTimeout > 0) {
+            const timer = setTimeout(() => {
+                setNewEmailCodeTimeout(newEmailCodeTimeout - 1);
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+    }, [newEmailCodeTimeout]);
 
     const verificationSchema = z.object({
         code: z.string().min(6, { message: "Verification code must be 6 characters" }),
@@ -29,7 +60,12 @@ export default function DashboardPage() {
 
     const changePasswordSchema = z.object({
         oldPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
-        newPassword: z.string().min(8, { message: "Password must be at least 8 characters" }),
+        newPassword: z.string()
+            .min(8, { message: "Password must be at least 8 characters" })
+            .regex(/[A-Z]/, { message: "Password must contain at least one uppercase letter" })
+            .regex(/[a-z]/, { message: "Password must contain at least one lowercase letter" })
+            .regex(/[0-9]/, { message: "Password must contain at least one number" })
+            .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one special character" }),
     });
 
     const oldEmailForm = useForm<z.infer<typeof emailSchema>>({
@@ -64,19 +100,24 @@ export default function DashboardPage() {
 
     const oldEmailSendCodeMutation = useMutation({
         mutationFn: async(data: { email: string }) => {
-            const response = await axiosInstance.post("/auth/change-email", data);
-            return response.data;
+            const response = await axiosInstance.post("/auth/change-email", data)
+            return response.data
         },
-        onSuccess() {
-            setStep('verify-old');
-        },
-        onError() {
+        onSuccess: () => {
             toast({
-                title: "Error",
-                description: "Failed to send verification code",
+                title: "Code sent",
+                description: "Verification code sent to your current email.",
+            })
+            setStep('verify-old')
+        },
+        onError: (error: AxiosError) => {
+            toast({
+                title: "Failed to send code",
+                description: error.response?.status === 429 ? "Please wait before requesting a new code" : "Unable to send verification code",
+                variant: "destructive"
             })
         }
-    });
+    })
 
     const oldEmailVerifyCodeMutation = useMutation({
         mutationFn: async(data: { code: string }) => {
@@ -101,6 +142,7 @@ export default function DashboardPage() {
         },
         onSuccess() {
             setStep('verify-new');
+            setNewEmailCodeTimeout(60);
         },
         onError() {
             toast({
@@ -128,20 +170,21 @@ export default function DashboardPage() {
 
     const changeEmailMutation = useMutation({
         mutationFn: async(data: { email: string }) => {
-            const response = await axiosInstance.post("/auth/change-email/finish", data);
-            return response.data;
+            const response = await axiosInstance.post("/auth/change-email/finish", data)
+            return response.data
         },
-        onSuccess() {
+        onSuccess: () => {
             toast({
-                title: "Success",
-                description: "Email changed successfully",
+                title: "Email updated",
+                description: "Your email has been successfully changed.",
             })
-            window.location.reload();
+            window.location.reload()
         },
-        onError() {
+        onError: (error: AxiosError) => {
             toast({
-                title: "Error",
-                description: "Failed to change email",
+                title: "Update failed",
+                description: error.response?.status === 409 ? "This email is already in use" : "Unable to update email",
+                variant: "destructive"
             })
         }
     })
@@ -165,6 +208,9 @@ export default function DashboardPage() {
         mutationFn: async () => {
             const response = await axiosInstance.post("/auth/change-password");
             return response.data;
+        },
+        onSuccess() {
+            setPasswordCodeTimeout(60); // Start the 60 second countdown
         },
         onError() {
             toast({
@@ -192,23 +238,24 @@ export default function DashboardPage() {
 
     const changePasswordMutation = useMutation({
         mutationFn: async (data: { oldPassword: string, newPassword: string }) => {
-            const response = await axiosInstance.post("/auth/change-password/finish", data);
-            return response.data;
+            const response = await axiosInstance.post("/auth/change-password/finish", data)
+            return response.data
         },
-        onSuccess() {
+        onSuccess: () => {
             toast({
-                title: "Success",
-                description: "Password changed successfully",
-            });
-            window.location.reload();
+                title: "Password updated",
+                description: "Your password has been successfully changed.",
+            })
+            window.location.reload()
         },
-        onError() {
+        onError: (error: AxiosError) => {
             toast({
-                title: "Error",
-                description: "Failed to change password",
+                title: "Update failed",
+                description: error.response?.status === 401 ? "Current password is incorrect" : "Unable to update password",
+                variant: "destructive"
             })
         }
-    });
+    })
 
     if (isLoading) {
         return (
@@ -280,8 +327,8 @@ export default function DashboardPage() {
                                 <Sheet>
                                 <SheetTrigger asChild>
                                     <Button
-                                        variant="outline"
-                                        className="w-full sm:w-auto border-paragraph/20 text-paragraph hover:bg-paragraph/10 hover:text-headline transition-colors"
+                                        variant="default"
+                                        className="w-full sm:w-auto bg-button hover:bg-button/90 text-buttonText transition-colors"
                                     >
                                         Change Email
                                     </Button>
@@ -328,7 +375,10 @@ export default function DashboardPage() {
                                                             </FormItem>
                                                         )}
                                                     />
-                                                    <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                    <Button 
+                                                        type="submit" 
+                                                        className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
+                                                    >
                                                         Send Verification Code
                                                     </Button>
                                                 </form>
@@ -364,18 +414,24 @@ export default function DashboardPage() {
                                                         )}
                                                     />
                                                     <div className="flex flex-col gap-2">
-                                                        <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                        <Button 
+                                                            type="submit" 
+                                                            className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
+                                                        >
                                                             Verify Code
                                                         </Button>
                                                         <Button 
                                                             type="button"
-                                                            variant="ghost"
+                                                            variant="secondary"
                                                             onClick={() => {
                                                                 oldEmailSendCodeMutation.mutate({ email: oldEmailForm.getValues().email });
                                                             }}
-                                                            className="w-full text-paragraph hover:text-headline hover:bg-paragraph/10"
+                                                            disabled={oldEmailCodeTimeout > 0}
+                                                            className="w-full bg-paragraph/10 hover:bg-paragraph/20 text-paragraph transition-colors disabled:opacity-50"
                                                         >
-                                                            Resend Code
+                                                            {oldEmailCodeTimeout > 0 
+                                                                ? `Resend Code (${oldEmailCodeTimeout}s)` 
+                                                                : 'Resend Code'}
                                                         </Button>
                                                     </div>
                                                 </form>
@@ -405,7 +461,10 @@ export default function DashboardPage() {
                                                             </FormItem>
                                                         )}
                                                     />
-                                                    <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                    <Button 
+                                                        type="submit" 
+                                                        className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
+                                                    >
                                                         Send Verification Code
                                                     </Button>
                                                 </form>
@@ -441,18 +500,24 @@ export default function DashboardPage() {
                                                         )}
                                                     />
                                                     <div className="flex flex-col gap-2">
-                                                        <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                        <Button 
+                                                            type="submit" 
+                                                            className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
+                                                        >
                                                             Verify Code
                                                         </Button>
                                                         <Button 
                                                             type="button"
-                                                            variant="ghost"
+                                                            variant="secondary"
                                                             onClick={() => {
                                                                 newEmailSendCodeMutation.mutate({ email: newEmailForm.getValues().email });
                                                             }}
-                                                            className="w-full text-paragraph hover:text-headline hover:bg-paragraph/10"
+                                                            disabled={newEmailCodeTimeout > 0}
+                                                            className="w-full bg-paragraph/10 hover:bg-paragraph/20 text-paragraph transition-colors disabled:opacity-50"
                                                         >
-                                                            Resend Code
+                                                            {newEmailCodeTimeout > 0 
+                                                                ? `Resend Code (${newEmailCodeTimeout}s)` 
+                                                                : 'Resend Code'}
                                                         </Button>
                                                     </div>
                                                 </form>
@@ -469,7 +534,7 @@ export default function DashboardPage() {
                                                         onClick={() => {
                                                             changeEmailMutation.mutate({ email: newEmailForm.getValues().email });
                                                         }}
-                                                        className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                                                        className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
                                                     >
                                                         Confirm
                                                     </Button>
@@ -477,8 +542,8 @@ export default function DashboardPage() {
                                                         onClick={() => {
                                                             setStep('old-email');
                                                         }}
-                                                        variant="outline"
-                                                        className="w-full border-paragraph/20 text-paragraph hover:bg-paragraph/10 hover:text-headline transition-colors"
+                                                        variant="secondary"
+                                                        className="w-full bg-paragraph/10 hover:bg-paragraph/20 text-paragraph transition-colors"
                                                     >
                                                         Cancel
                                                     </Button>
@@ -492,8 +557,8 @@ export default function DashboardPage() {
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button
-                                        variant="outline"
-                                        className="w-full sm:w-auto border-paragraph/20 text-paragraph hover:bg-paragraph/10 hover:text-headline transition-colors"
+                                        variant="default"
+                                        className="w-full sm:w-auto bg-button hover:bg-button/90 text-buttonText transition-colors"
                                     >
                                         Change Password
                                     </Button>
@@ -540,18 +605,24 @@ export default function DashboardPage() {
                                                         )}
                                                     />
                                                     <div className="flex flex-col gap-2">
-                                                        <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                        <Button 
+                                                            type="submit" 
+                                                            className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
+                                                        >
                                                             Verify Code
                                                         </Button>
                                                         <Button 
                                                             type="button"
-                                                            variant="ghost"
+                                                            variant="secondary"
                                                             onClick={() => {
                                                                 passwordSendCodeMutation.mutate();
                                                             }}
-                                                            className="w-full text-paragraph hover:text-headline hover:bg-paragraph/10"
+                                                            disabled={passwordCodeTimeout > 0}
+                                                            className="w-full bg-paragraph/10 hover:bg-paragraph/20 text-paragraph transition-colors disabled:opacity-50"
                                                         >
-                                                            Send Code
+                                                            {passwordCodeTimeout > 0 
+                                                                ? `Resend Code (${passwordCodeTimeout}s)` 
+                                                                : 'Send Code'}
                                                         </Button>
                                                     </div>
                                                 </form>
@@ -596,10 +667,40 @@ export default function DashboardPage() {
                                                                     />
                                                                 </FormControl>
                                                                 <FormMessage className="text-button"/>
+                                                                <ul className="mt-2 text-sm space-y-1">
+                                                                    <li className={`flex items-center gap-2 ${
+                                                                        field.value.length >= 8 ? "text-green-500" : "text-paragraph/50"
+                                                                    }`}>
+                                                                        {field.value.length >= 8 ? "✓" : "○"} At least 8 characters
+                                                                    </li>
+                                                                    <li className={`flex items-center gap-2 ${
+                                                                        /[A-Z]/.test(field.value) ? "text-green-500" : "text-paragraph/50"
+                                                                    }`}>
+                                                                        {/[A-Z]/.test(field.value) ? "✓" : "○"} One uppercase letter
+                                                                    </li>
+                                                                    <li className={`flex items-center gap-2 ${
+                                                                        /[a-z]/.test(field.value) ? "text-green-500" : "text-paragraph/50"
+                                                                    }`}>
+                                                                        {/[a-z]/.test(field.value) ? "✓" : "○"} One lowercase letter
+                                                                    </li>
+                                                                    <li className={`flex items-center gap-2 ${
+                                                                        /[0-9]/.test(field.value) ? "text-green-500" : "text-paragraph/50"
+                                                                    }`}>
+                                                                        {/[0-9]/.test(field.value) ? "✓" : "○"} One number
+                                                                    </li>
+                                                                    <li className={`flex items-center gap-2 ${
+                                                                        /[^A-Za-z0-9]/.test(field.value) ? "text-green-500" : "text-paragraph/50"
+                                                                    }`}>
+                                                                        {/[^A-Za-z0-9]/.test(field.value) ? "✓" : "○"} One special character
+                                                                    </li>
+                                                                </ul>
                                                             </FormItem>
                                                         )}
                                                     />
-                                                    <Button type="submit" className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors">
+                                                    <Button 
+                                                        type="submit" 
+                                                        className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
+                                                    >
                                                         Change Password
                                                     </Button>
                                                 </form>
@@ -612,8 +713,8 @@ export default function DashboardPage() {
                             <Sheet>
                                 <SheetTrigger asChild>
                                     <Button
-                                        variant="outline"
-                                        className="w-full sm:w-auto border-paragraph/20 text-paragraph hover:bg-paragraph/10 hover:text-headline transition-colors"
+                                        variant="default"
+                                        className="w-full sm:w-auto bg-button hover:bg-button/90 text-buttonText transition-colors"
                                     >
                                         Delete Account
                                     </Button>
@@ -635,14 +736,14 @@ export default function DashboardPage() {
                                                     onClick={() => {
                                                         deleteAccountMutation.mutate();
                                                     }}
-                                                    variant="outline"
-                                                    className="w-full border-button text-button hover:bg-button hover:text-buttonText transition-colors"
+                                                    variant="default"
+                                                    className="w-full bg-button hover:bg-button/90 text-buttonText transition-colors"
                                                 >
                                                     Delete Account
                                                 </Button>
                                                 <Button
-                                                    variant="outline"
-                                                    className="w-full border-paragraph/20 text-paragraph hover:bg-paragraph/10 hover:text-headline transition-colors"
+                                                    variant="secondary"
+                                                    className="w-full bg-paragraph/10 hover:bg-paragraph/20 text-paragraph transition-colors"
                                                 >
                                                     Cancel
                                                 </Button>

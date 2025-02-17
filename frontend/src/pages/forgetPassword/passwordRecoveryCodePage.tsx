@@ -5,9 +5,12 @@ import { toast } from "@/hooks/use-toast"
 import { axiosInstance } from "@/lib/axios"
 import { AxiosError } from "axios"
 import { VerificationCodeForm } from "@/components/forms/verifyForgetPasswordForm"
+import { useState } from "react"
 
 export default function PasswordRecoveryCodePage() {
     const navigate = useNavigate()
+    const [isResendDisabled, setIsResendDisabled] = useState(false)
+    const [timer, setTimer] = useState(0)
 
     const verifyMutation = useMutation({
         mutationFn: async (pin: string) => {
@@ -36,6 +39,18 @@ export default function PasswordRecoveryCodePage() {
                 title: "Success",
                 description: "Code resent successfully.",
             })
+            setIsResendDisabled(true)
+            setTimer(60)
+            const interval = setInterval(() => {
+                setTimer((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval)
+                        setIsResendDisabled(false)
+                        return 0
+                    }
+                    return prev - 1
+                })
+            }, 1000)
         },
         onError: (error: AxiosError) => {
             toast({
@@ -61,8 +76,10 @@ export default function PasswordRecoveryCodePage() {
                 <CardContent>
                     <VerificationCodeForm
                         onSubmit={(values: { pin: string }) => verifyMutation.mutate(values.pin)}
-                        onResend={() => resendMutation.mutate()}
+                        onResend={() => !isResendDisabled && resendMutation.mutate()}
                         isLoading={verifyMutation.isPending || resendMutation.isPending}
+                        disableResend={isResendDisabled}
+                        timer={timer}
                         backUrl="/forgot-password"
                     />
                 </CardContent>

@@ -4,6 +4,7 @@ import StartSignUpPage from "@/pages/signUp/startSignUpPage.tsx";
 import VerifyEmailPage from "@/pages/signUp/verifyEmailPage.tsx";
 import FinishSignUpPage from "@/pages/signUp/finishSignUpPage.tsx";
 import {
+    AccountRecoveryFinishProtection,
     AccountRecoveryProtection,
     ForgetPasswordProtection,
     ForgotPasswordCookie,
@@ -20,6 +21,7 @@ import ResetPasswordPage from "@/pages/forgetPassword/resetPasswordPage.tsx";
 import StartRecoveryPage from "@/pages/recover/startRecovery.tsx";
 import NewEmailPage from "@/pages/recover/newEmail.tsx";
 import NewEmailVerifyPage from "@/pages/recover/newEmailVerify.tsx";
+import FinishRecoveryPage from "@/pages/recover/recover.tsx";
 
 const queryClient = new QueryClient()
 
@@ -127,6 +129,16 @@ export default function App() {
                                 <AccountRecoveryProtection>
                                     <NewEmailVerifyPage />
                                 </AccountRecoveryProtection>
+                            </TemporaryPublicRoute>
+                        </PublicRoute>
+                    }/>
+
+                    <Route path="/recovery/finish" element={
+                        <PublicRoute>
+                            <TemporaryPublicRoute>
+                                <AccountRecoveryFinishProtection>
+                                    <FinishRecoveryPage />
+                                </AccountRecoveryFinishProtection>
                             </TemporaryPublicRoute>
                         </PublicRoute>
                     }/>

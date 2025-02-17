@@ -21,6 +21,7 @@ declare global {
             email: string;
             forgot_password_email: string;
             userId: string;
+            sessionToken: string;
         }
     }
 }

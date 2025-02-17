@@ -21,21 +21,21 @@ export default function LoginPage() {
         },
         onMutate: () => {
             toast({
-                title: "Processing",
+                title: "Logging in",
                 description: "Please wait...",
             })
         },
         onSuccess: () => {
             toast({
-                title: "Success",
-                description: "Logged in successfully.",
+                title: "Welcome back!",
+                description: "Successfully logged into your account.",
             })
             setTimeout(() => navigate("/dashboard"), 0)
         },
         onError: (error: AxiosError) => {
             toast({
-                title: "Error",
-                description: error.response?.statusText || "An error occurred.",
+                title: "Login failed",
+                description: error.response?.status === 401 ? "Invalid credentials" : "An error occurred during login",
                 variant: "destructive"
             })
         },
@@ -67,6 +67,12 @@ export default function LoginPage() {
                         className="text-paragraph hover:text-headline transition-colors text-sm"
                     >  
                         Forgot your password?
+                    </Link>
+                    <Link
+                        to="/recovery"
+                        className="text-paragraph hover:text-headline transition-colors text-sm"
+                    >
+                        Recover your account
                     </Link>
                 </CardFooter>
             </Card>

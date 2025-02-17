@@ -7,16 +7,20 @@ import { Link } from "react-router-dom"
 import { VerificationCodeFormData, verificationCodeSchema } from "@/lib/schemas"
 
 interface VerificationCodeFormProps {
-    onSubmit: (data: VerificationCodeFormData) => void
+    onSubmit: (values: { pin: string }) => void
     onResend: () => void
     isLoading?: boolean
-    backUrl: string
+    disableResend?: boolean
+    timer?: number
+    backUrl?: string
 }
 
 export function VerificationCodeForm({ 
     onSubmit, 
     onResend, 
     isLoading,
+    disableResend,
+    timer,
     backUrl 
 }: VerificationCodeFormProps) {
     const form = useForm<VerificationCodeFormData>({
@@ -56,10 +60,10 @@ export function VerificationCodeForm({
                                     onClick={onResend}
                                     type="button"
                                     variant="link"
-                                    className="text-paragraph hover:text-headline transition-colors p-0"
-                                    disabled={isLoading}
+                                    disabled={disableResend || isLoading}
+                                    className="text-paragraph hover:text-headline transition-colors p-0 disabled:opacity-50"
                                 >
-                                    Resend code
+                                    {disableResend ? `Resend code in ${timer}s` : "Resend code"}
                                 </Button>
                             </FormDescription>
                             <FormMessage className="text-button"/>

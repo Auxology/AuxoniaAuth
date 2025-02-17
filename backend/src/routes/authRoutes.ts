@@ -25,7 +25,7 @@ import {
     getUserData,
 } from "../controllers/userController.js";
 import {
-    checkAuth, checkForAccountRecovery, checkForForgotPasswordSession,
+    checkAuth, checkForAccountRecovery, checkForAccountRecoveryFinish, checkForForgotPasswordSession,
     checkForgotPasswordCookie,
     checkForTemporarySession,
     checkVerifyEmailCookie
@@ -92,3 +92,4 @@ authRoutes.get("/forgot-password/check", checkForgotPasswordCookie);
 authRoutes.get("/reset-password/check", forgetPasswordProtection ,checkForForgotPasswordSession);
 authRoutes.get("/temporary-session", temporarySessionProtection, checkForTemporarySession);
 authRoutes.get("/account-recovery/check", accountRecoveryProtection, checkForAccountRecovery);
+authRoutes.get("/account-recovery/finish/check", accountRecoveryFinishProtection, checkForAccountRecoveryFinish);

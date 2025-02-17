@@ -17,25 +17,25 @@ export default function StartSignUpPage() {
         },
         onMutate: () => {
             toast({
-                title: "Processing",
-                description: "Please wait...",
+                title: "Creating account",
+                description: "Setting up your new account...",
             })
         },
         onSuccess: () => {
             toast({
-                title: "Success",
-                description: "Check your email for the verification code.",
+                title: "Verify your email",
+                description: "We've sent a verification code to your email.",
             })
             setTimeout(() => navigate("/signup/code"), 0)
         },
         onError: (error: AxiosError) => {
             const errorMessages = {
-                409: "Email is already used",
-                429: "Too many requests",
+                409: "This email is already registered",
+                429: "Please wait before trying again",
             }
             toast({
-                title: "Error",
-                description: errorMessages[error.response?.status as keyof typeof errorMessages] || "An error occurred",
+                title: "Sign up failed",
+                description: errorMessages[error.response?.status as keyof typeof errorMessages] || "Unable to create account",
                 variant: "destructive"
             })
         }

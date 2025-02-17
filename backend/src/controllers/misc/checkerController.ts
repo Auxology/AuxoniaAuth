@@ -114,3 +114,27 @@ export const checkForAccountRecovery = async (req: Request, res: Response):Promi
         res.status(500).json({message: "Internal Server Error"});
     }
 }
+
+export const checkForAccountRecoveryFinish = async (req: Request, res: Response):Promise<void> => {
+    try{
+        const userId = req.userId;
+
+        if(!userId){
+            res.status(401).json({message: "Unauthorized - No Token Provided"});
+            return;
+        }
+
+        const session = req.sessionToken;
+
+        if(!session){
+            res.status(401).json({message: "Unauthorized - No Session Provided"});
+            return;
+        }
+
+        res.status(200).json({userId: userId});
+    }
+    catch (err) {
+        console.error(err);
+        res.status(500).json({message: "Internal Server Error"});
+    }
+}

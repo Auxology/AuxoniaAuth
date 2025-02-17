@@ -138,7 +138,7 @@ export default function NewEmailVerifyPage() {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="w-full border-paragraph/20 text-paragraph hover:text-headline hover:border-headline transition-colors"
+                                    className="w-full bg-transparent border-transparent text-paragraph "
                                     disabled={isResendDisabled || resendMutation.isPending}
                                     onClick={() => resendMutation.mutate()}
                                 >

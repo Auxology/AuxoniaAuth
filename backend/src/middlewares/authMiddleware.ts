@@ -223,6 +223,7 @@ export const accountRecoveryFinishProtection = async (req: Request, res: Respons
         }
 
         req.userId = decoded.userId;
+        req.sessionToken = decoded.sessionToken;
 
         next();
     }

@@ -45,7 +45,7 @@ export default function NewEmailPage() {
                 title: "Success",
                 description: "Code has been sent to your new email",
             })
-            setTimeout(() => navigate("/recovery/code"), 0)
+            setTimeout(() => navigate("/recovery/new-email/code"), 0)
         },
         onError: (error: AxiosError) => {
             toast({

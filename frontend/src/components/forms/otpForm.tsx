@@ -8,9 +8,12 @@ import { VerifyEmailFormData, verifyEmailSchema } from "@/lib/schemas"
 interface OTPFormProps {
     onSubmit: (data: VerifyEmailFormData) => void
     onResend: () => void
+    isLoading?: boolean
+    disableResend?: boolean
+    timer?: number
 }
 
-export function OTPForm({ onSubmit, onResend }: OTPFormProps) {
+export function OTPForm({ onSubmit, onResend, isLoading, disableResend, timer }: OTPFormProps) {
     const form = useForm<VerifyEmailFormData>({
         resolver: zodResolver(verifyEmailSchema),
         defaultValues: {
@@ -26,7 +29,7 @@ export function OTPForm({ onSubmit, onResend }: OTPFormProps) {
                     name="pin"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel className="text-headline">Code</FormLabel>
+                            <FormLabel className="text-headline">Verification Code</FormLabel>
                             <FormControl>
                                 <InputOTP maxLength={6} className="gap-2" {...field}>
                                     <InputOTPGroup>
@@ -48,9 +51,10 @@ export function OTPForm({ onSubmit, onResend }: OTPFormProps) {
                                     onClick={onResend}
                                     type="button"
                                     variant="link"
-                                    className="text-paragraph hover:text-headline transition-colors p-0"
+                                    disabled={disableResend || isLoading}
+                                    className="text-paragraph hover:text-headline transition-colors p-0 disabled:opacity-50"
                                 >
-                                    Resend code
+                                    {disableResend ? `Resend code in ${timer}s` : "Resend code"}
                                 </Button>
                             </FormDescription>
                             <FormMessage className="text-button"/>
@@ -59,7 +63,8 @@ export function OTPForm({ onSubmit, onResend }: OTPFormProps) {
                 />
                 <Button
                     type="submit"
-                    className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors"
+                    disabled={isLoading}
+                    className="w-full bg-button text-buttonText hover:bg-button/90 transition-colors disabled:opacity-50"
                 >
                     Verify Email
                 </Button>
